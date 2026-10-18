@@ -9,10 +9,23 @@ import subprocess
 import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT / ".venv" / "bin" / "python"
+sys.path.insert(0, str(ROOT / "web"))
+from store import cached_plot, leaderboard, plot_id, record_plot, rebuild_leaderboard  # noqa: E402
+
 PORT = 8765
+
+
+def python_bin():
+    for candidate in (ROOT / ".venv" / "Scripts" / "python.exe", ROOT / ".venv" / "bin" / "python"):
+        if candidate.exists():
+            return str(candidate)
+    return sys.executable
+
+
+PYTHON = python_bin()
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -23,8 +36,16 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        if parsed.path == "/api/leaderboard":
+            self._json(200, leaderboard())
+            return
+        super().do_GET()
+
     def do_POST(self):
-        if self.path != "/api/analyze":
+        parsed = urlparse(self.path)
+        if parsed.path != "/api/analyze":
             self.send_error(404)
             return
         length = int(self.headers.get("Content-Length", 0))
@@ -43,23 +64,30 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(400, {"error": "Draw a smaller rectangle. This check covers about 1 degree."})
             return
 
-        lat = (bbox[1] + bbox[3]) / 2
-        lon = (bbox[0] + bbox[2]) / 2
-        plot = ROOT / "data" / "plots" / f"box_{lat:.3f}_{lon:.3f}".replace("-", "m").replace(".", "p")
+        hit = cached_plot(bbox)
+        if hit is not None:
+            record_plot(hit, hit=True)
+            self._json(200, {"plot": hit.name, "cached": True})
+            return
+
+        plot = ROOT / "data" / "plots" / plot_id(bbox)
         plot.mkdir(parents=True, exist_ok=True)
         bbox_arg = ",".join(str(v) for v in bbox)
         env = os.environ.copy()
-        steps = [
-            [str(PYTHON), "pipeline/analyze_fast.py", "--bbox", bbox_arg, "--out", str(plot)],
-        ]
-        for cmd in steps:
-            run = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, timeout=180)
-            if run.returncode != 0:
-                detail = (run.stderr or run.stdout or "analysis failed").strip()[-800:]
-                self._json(500, {"error": detail})
-                return
-        name = plot.relative_to(ROOT / "data" / "plots").as_posix()
-        self._json(200, {"plot": name})
+        run = subprocess.run(
+            [PYTHON, "pipeline/analyze_fast.py", "--bbox", bbox_arg, "--out", str(plot)],
+            cwd=ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        if run.returncode != 0:
+            detail = (run.stderr or run.stdout or "analysis failed").strip()[-800:]
+            self._json(500, {"error": detail})
+            return
+        record_plot(plot, hit=False)
+        self._json(200, {"plot": plot.name, "cached": False})
 
     def _json(self, code, payload):
         raw = json.dumps(payload).encode()
@@ -72,6 +100,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     os.chdir(ROOT)
+    rebuild_leaderboard()
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     print(f"http://127.0.0.1:{PORT}/web/", flush=True)
     server.serve_forever()

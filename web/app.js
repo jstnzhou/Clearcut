@@ -32,9 +32,20 @@ const sceneDate = document.getElementById("scene-date");
 const timeInput = document.getElementById("time");
 const flyNote = document.getElementById("fly-note");
 const analyzeNote = document.getElementById("analyze-note");
+const boardDialog = document.getElementById("board-dialog");
+const boardDialogList = document.getElementById("board-dialog-list");
+const boardDialogNote = document.getElementById("board-dialog-note");
+const boardPreview = document.getElementById("board-preview");
+const boardPreviewNote = document.getElementById("board-preview-note");
 
+function requestedPlot() {
+  const raw = new URLSearchParams(window.location.search).get("plot") || "";
+  return /^[A-Za-z0-9_]+$/.test(raw) ? raw : "";
+}
+
+const requested = requestedPlot();
 const state = {
-  plotUrl: "../data/plots/kalbar1",
+  plotUrl: "../data/plots/" + (requested || "kalbar1"),
   bbox: KALBAR_BBOX.slice(),
   scenes: [],
   chips: [],
@@ -335,9 +346,23 @@ function renderSelection() {
 function renderPanel() {
   viewSubmission.hidden = !state.showingSubmission;
   viewUnknown.hidden = state.showingSubmission;
+  const nameEl = document.getElementById("plot-name");
+  const coordsEl = document.getElementById("plot-coords");
+  const lat = ((state.bbox[1] + state.bbox[3]) / 2);
+  const lon = ((state.bbox[0] + state.bbox[2]) / 2);
+  const folder = state.plotUrl.split("/").pop();
+  if (nameEl) {
+    nameEl.textContent = folder === "kalbar1"
+      ? "Plot KS-19, a fictional plantation."
+      : "Plot at " + lat.toFixed(3) + ", " + lon.toFixed(3) + ".";
+  }
+  if (coordsEl) {
+    coordsEl.textContent = "Coordinates " + lat.toFixed(2) + ", " + lon.toFixed(2) + ".";
+  }
   if (!state.showingSubmission) return;
-  statusEl.hidden = state.analysisLoaded;
-  statusEl.textContent = state.analysisLoaded ? "" : "Chip analysis is still running.";
+  const chipsReady = state.analysisLoaded || !!state.confidence;
+  statusEl.hidden = chipsReady;
+  statusEl.textContent = chipsReady ? "" : "Chip analysis is still running.";
   renderFinding();
   renderSelection();
 }
@@ -535,7 +560,9 @@ function setDrawMode(on) {
 }
 
 let map = null;
-loadPlot();
+loadPlot().then(function () {
+  refreshBoard();
+});
 
 try {
   map = new maplibregl.Map({
@@ -710,6 +737,38 @@ document.getElementById("show-kalbar").addEventListener("click", function () {
   loadPlot().then(function () { showSubmission(true); });
 });
 
+function openPlot(id, animate) {
+  if (!/^[A-Za-z0-9_]+$/.test(id)) return Promise.resolve();
+  state.plotUrl = "../data/plots/" + id;
+  return loadPlot().then(function () {
+    showSubmission(animate);
+  });
+}
+
+function refreshBoard() {
+  return fetchBoard().then(function (data) {
+    const count = (data.plots && data.plots.length) || 0;
+    boardPreviewNote.textContent = count ? "Ranked by conversion confidence." : "";
+    if (boardDialogNote) {
+      boardDialogNote.textContent = count ? count + " scored plots." : "";
+    }
+    paintBoard(boardPreview, data, {
+      limit: 5,
+      onOpen: function (plot) { openPlot(plot.id, true); }
+    });
+    if (boardDialogList) {
+      paintBoard(boardDialogList, data, {
+        onOpen: function (plot) {
+          if (boardDialog && boardDialog.open) boardDialog.close();
+          openPlot(plot.id, true);
+        }
+      });
+    }
+  }).catch(function () {
+    boardPreviewNote.textContent = "Board unavailable.";
+  });
+}
+
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
   if (!state.draftBbox) return;
@@ -725,16 +784,30 @@ document.getElementById("analyze").addEventListener("click", function () {
       return payload;
     });
   }).then(function (payload) {
-    state.plotUrl = "../data/plots/" + payload.plot;
-    return loadPlot();
-  }).then(function () {
-    analyzeNote.textContent = "";
-    showSubmission(true);
+    analyzeNote.textContent = payload.cached
+      ? "Loaded a cached check for this area."
+      : "";
+    return openPlot(payload.plot, true).then(function () {
+      return refreshBoard();
+    });
   }).catch(function (error) {
     analyzeNote.textContent = error.message || "Analysis failed";
   }).finally(function () {
     button.disabled = false;
   });
+});
+
+document.getElementById("open-board").addEventListener("click", function () {
+  refreshBoard();
+  if (boardDialog && boardDialog.showModal) boardDialog.showModal();
+});
+
+document.getElementById("popout-board").addEventListener("click", function () {
+  window.open("leaderboard.html", "clearcut-board", "popup=yes,width=760,height=900");
+});
+
+document.getElementById("close-board").addEventListener("click", function () {
+  if (boardDialog && boardDialog.open) boardDialog.close();
 });
 
 timeInput.addEventListener("input", function () { setTime(timeInput.value); });
