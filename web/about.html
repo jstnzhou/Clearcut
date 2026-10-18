@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About · OpenCanopy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,560&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="index.html">OpenCanopy</a>
+    <nav>
+      <a href="demo.html">Demo</a>
+      <a href="about.html" aria-current="page">About</a>
+    </nav>
+  </header>
+  <article class="page">
+    <p class="kicker">30 December 2026</p>
+    <h2>Ten weeks</h2>
+    <p>Large and medium companies that place cattle, cocoa, coffee, palm oil, rubber, soya, or wood on the EU market have until 30 December 2026. From this weekend, that is about ten weeks. Micro and small operators who are natural persons have until 30 June 2027, except for timber already covered by the older timber rules, which stays on the December date. Downstream traders of every size are on the December date too.</p>
+    <p>After that day, the product needs a due diligence statement: the plot of land, and a check that the plot was not forest cleared after 31 December 2020. The authority still decides. A missing plot, or a plot that was forest and then lost its trees, is the case a reviewer has to see.</p>
+
+    <h2>What the rule means</h2>
+    <p>The law is Regulation (EU) 2023/1115, the EU Deforestation Regulation. It covers those seven commodities and goods made from them, such as leather, chocolate, and furniture. “Deforestation-free” means the land was not converted from forest after the cutoff, and that the producer can point to the coordinates. A shipment without that geography cannot be checked. A shipment with it can.</p>
+    <p>The cutoff is not the day the law starts. The forest that matters is the forest of 31 December 2020. Clearing after that date is what the rule is written to keep out of the market, even if the company only files its paperwork in 2026.</p>
+
+    <h2>How it got here</h2>
+    <p>The EU Timber Regulation, from 2013, covered wood and asked for legality in the country of harvest. It did not ask whether the harvest had removed a forest. In 2021 the Commission proposed a wider rule. Parliament adopted it in 2023, and it entered into force that June. The first application date was the end of 2024 for large operators.</p>
+    <p>The date moved twice. The information system companies must file into was not ready, and the paperwork was heavier than small producers could carry. A first delay pushed the start into 2025. In December 2025 Parliament adopted a second delay and a simpler filing for the smallest operators. The cutoff date for the forest did not move. Only the day the duty starts did.</p>
+
+    <h2>The size of the loss</h2>
+    <p>The UN Food and Agriculture Organization estimates that 420 million hectares of forest were converted to other uses between 1990 and 2020. That is an area larger than the EU. The European Parliament, citing that record, says EU consumption is tied to about a tenth of global deforestation, and that palm oil and soya are more than two thirds of the EU share. The Commission’s impact assessment says about 80 percent of current deforestation is agricultural expansion.</p>
+    <p>Most of that loss is in the Amazon, the Congo Basin, and Southeast Asia. The goods travel. A reviewer in a customs office or a competent authority never sees the field. They see a polygon, if the company sent one.</p>
+
+    <h2>What would make the check better</h2>
+    <p>The rule already asks for the plot. The weak step is looking at it. A reviewer would need the 2020 forest map, a loss map for the years after, and a satellite scene for each year, lined up on the same box, in the same season. Doing that by hand for every statement is why the filing system and the delays became the story.</p>
+    <p>OpenCanopy is that look. The reviewer draws the box the supplier named. The 2020 forest map and the loss map mark where forest later lost trees. The years play from 2020 to the latest clear scene, so a person can see the change. Perceptron is a second opinion on the red only: whether it looks planted, in rows, blocks, or straight roads. Where the maps are quiet, the model is not asked.</p>
+    <p>That does not clear a shipment and it does not condemn one. The sentence it can support is narrow: this plot shows post-2020 tree-cover loss consistent with plantation conversion. The authority approves. A better system would attach that same picture to the due diligence statement, so the next reviewer, and the public, can run the check again on the same coordinates.</p>
+
+    <h2>The sample</h2>
+    <p>Plot KS-19 is a fictional submission on a real landscape in West Kalimantan. The coordinates are real. The company is not. OpenCanopy does not name a supplier.</p>
+    <h2>The records</h2>
+    <p>Sentinel-2 L2A supplies the yearly pictures. Hansen Global Forest Change, GFC-2024-v1.12, marks the year of tree loss through 2024. JRC Global Forest Cover 2020, version 4, marks what was forest at the cutoff. Perceptron Mk1.5 is asked only whether a loss patch looks planted.</p>
+    <p><a href="demo.html">Open the demo</a></p>
+  </article>
+</body>
+</html>
