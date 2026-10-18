@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <title>OpenCanopy</title>
+  <style>:root{--ink:#0d1a14}@media (prefers-color-scheme: dark){:root{--ink:#f6f4ec}}</style>
+  <g fill="none" style="stroke:var(--ink)" stroke-width="2.6" stroke-linejoin="round">
+    <path d="M8 15 L30 6 L42 18"/>
+    <path d="M38 40 L14 42 L8 15"/>
+  </g>
+  <path d="M42 18 L38 40" stroke="#ec4c2e" stroke-width="2.8" stroke-linecap="round"/>
+  <circle cx="24" cy="24" r="7.5" style="fill:var(--ink)"/>
+  <rect x="22.6" y="29" width="2.8" height="6" style="fill:var(--ink)"/>
+  <g style="fill:var(--ink)"><circle cx="8" cy="15" r="2.8"/><circle cx="30" cy="6" r="2.8"/><circle cx="14" cy="42" r="2.8"/></g>
+  <g fill="#ec4c2e"><circle cx="42" cy="18" r="2.8"/><circle cx="38" cy="40" r="2.8"/></g>
+</svg>
