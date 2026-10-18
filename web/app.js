@@ -332,9 +332,23 @@ function renderSelection() {
   document.getElementById("chip-result").textContent = RESULT_NAME[chip.result] || chip.result;
 }
 
+function plotIdFromUrl(plotUrl) {
+  const parts = String(plotUrl || "").split("/");
+  return parts[parts.length - 1] || "kalbar1";
+}
+
+function updateResultsLink() {
+  const link = document.getElementById("open-results");
+  if (!link) return;
+  const id = plotIdFromUrl(state.plotUrl);
+  link.href = "/web/results.html?plot=" + encodeURIComponent(id);
+  link.textContent = state.showingSubmission ? "Open evidence pack" : "Evidence pack";
+}
+
 function renderPanel() {
   viewSubmission.hidden = !state.showingSubmission;
   viewUnknown.hidden = state.showingSubmission;
+  updateResultsLink();
   if (!state.showingSubmission) return;
   statusEl.hidden = state.analysisLoaded;
   statusEl.textContent = state.analysisLoaded ? "" : "Chip analysis is still running.";
@@ -726,9 +740,15 @@ document.getElementById("analyze").addEventListener("click", function () {
     });
   }).then(function (payload) {
     state.plotUrl = "../data/plots/" + payload.plot;
+    analyzeNote.innerHTML = "";
+    if (payload.results) {
+      const link = document.createElement("a");
+      link.href = payload.results;
+      link.textContent = "Open evidence pack";
+      analyzeNote.append("Done. ", link);
+    }
     return loadPlot();
   }).then(function () {
-    analyzeNote.textContent = "";
     showSubmission(true);
   }).catch(function (error) {
     analyzeNote.textContent = error.message || "Analysis failed";

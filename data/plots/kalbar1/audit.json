@@ -1,0 +1,1344 @@
+{
+  "id": "kalbar1",
+  "created_at": "2026-10-18T01:40:34.318413+00:00",
+  "share_path": "/web/results.html?plot=kalbar1",
+  "plot": {
+    "name": "kalbar1",
+    "lat": -0.78,
+    "lon": 110.08,
+    "bbox": [
+      110.05,
+      -0.81,
+      110.11,
+      -0.75
+    ]
+  },
+  "cutoff": "2020-12-31",
+  "verdict": {
+    "summary": "This plot shows post-2020 tree-cover loss consistent with plantation conversion.",
+    "raw": "CONTRADICTS a no-deforestation-since-2020 declaration",
+    "plot_post_cutoff_loss_share": 0.1987,
+    "boxes": [
+      {
+        "label": "",
+        "box": [
+          0,
+          417,
+          1000,
+          866
+        ],
+        "post_cutoff_loss_share": 0.432,
+        "confirmed": true
+      },
+      {
+        "label": "",
+        "box": [
+          805,
+          903,
+          1000,
+          999
+        ],
+        "post_cutoff_loss_share": 0.139,
+        "confirmed": false
+      }
+    ],
+    "disclaimer": "Screening tool based on public satellite data. Not a legal certification."
+  },
+  "dating": {
+    "method": "hansen_annual_loss",
+    "cutoff": "2020-12-31",
+    "first_clearing_year": 2023,
+    "peak_loss_year": 2023,
+    "peak_loss_share": 0.1976,
+    "post_cutoff_loss_share": 0.1987,
+    "by_year": {
+      "2021": 0.0001,
+      "2022": 0.0001,
+      "2023": 0.1976,
+      "2024": 0.0009
+    },
+    "note": "Hansen first shows meaningful post-cutoff loss in 2023 (after the EUDR cutoff of 31 Dec 2020). Peak annual loss is 2023 (19.8% of the plot). Later Sentinel frames show current land use; they are not 2025\u201326 Hansen detections.",
+    "relative_to_cutoff": "after"
+  },
+  "imagery": {
+    "before": {
+      "date": "2019-09-14",
+      "scene_id": "S2B_MSIL2A_20190914T024549_R132_T49MCV_20201004T130617",
+      "cloud_cover": 3.005508,
+      "ndvi_mean": 0.879,
+      "file": "before.png",
+      "url": "/data/plots/kalbar1/before.png"
+    },
+    "after": {
+      "date": "2026-08-08",
+      "scene_id": "S2B_MSIL2A_20260808T024529_R132_T49MCV_20260808T045442",
+      "cloud_cover": 0.012366,
+      "ndvi_mean": 0.8,
+      "file": "after.png",
+      "url": "/data/plots/kalbar1/after.png"
+    },
+    "peak": {
+      "year": 2023,
+      "file": "scene_2023.png",
+      "url": "/data/plots/kalbar1/scene_2023.png",
+      "scene": {
+        "date": "2023-08-29",
+        "scene_id": "S2A_MSIL2A_20230829T024531_R132_T49MCV_20240913T105727",
+        "cloud_cover": 0.037724,
+        "ndvi_mean": 0.762,
+        "year": 2023,
+        "file": "scene_2023.png"
+      },
+      "loss_share": 0.1976
+    },
+    "scenes": [
+      {
+        "date": "2019-09-14",
+        "scene_id": "S2B_MSIL2A_20190914T024549_R132_T49MCV_20201004T130617",
+        "cloud_cover": 3.005508,
+        "ndvi_mean": 0.879,
+        "year": 2019,
+        "file": "scene_2019.png",
+        "url": "/data/plots/kalbar1/scene_2019.png"
+      },
+      {
+        "date": "2020-09-18",
+        "scene_id": "S2B_MSIL2A_20200918T024549_R132_T49MCV_20200921T104844",
+        "cloud_cover": 4.622703,
+        "ndvi_mean": 0.865,
+        "year": 2020,
+        "file": "scene_2020.png",
+        "url": "/data/plots/kalbar1/scene_2020.png"
+      },
+      {
+        "date": "2021-02-15",
+        "scene_id": "S2B_MSIL2A_20210215T024809_R132_T49MCV_20210215T192204",
+        "cloud_cover": 5.950456,
+        "ndvi_mean": 0.872,
+        "year": 2021,
+        "file": "scene_2021.png",
+        "url": "/data/plots/kalbar1/scene_2021.png"
+      },
+      {
+        "date": "2022-08-09",
+        "scene_id": "S2B_MSIL2A_20220809T024529_R132_T49MCV_20220810T180126",
+        "cloud_cover": 4.961091,
+        "ndvi_mean": 0.696,
+        "year": 2022,
+        "file": "scene_2022.png",
+        "url": "/data/plots/kalbar1/scene_2022.png"
+      },
+      {
+        "date": "2023-08-29",
+        "scene_id": "S2A_MSIL2A_20230829T024531_R132_T49MCV_20240913T105727",
+        "cloud_cover": 0.037724,
+        "ndvi_mean": 0.762,
+        "year": 2023,
+        "file": "scene_2023.png",
+        "url": "/data/plots/kalbar1/scene_2023.png"
+      },
+      {
+        "date": "2024-09-07",
+        "scene_id": "S2B_MSIL2A_20240907T024529_R132_T49MCV_20240907T072625",
+        "cloud_cover": 6.673644,
+        "ndvi_mean": 0.683,
+        "year": 2024,
+        "file": "scene_2024.png",
+        "url": "/data/plots/kalbar1/scene_2024.png"
+      },
+      {
+        "date": "2025-07-29",
+        "scene_id": "S2C_MSIL2A_20250729T024611_R132_T49MCV_20250729T063417",
+        "cloud_cover": 1.450174,
+        "ndvi_mean": 0.833,
+        "year": 2025,
+        "file": "scene_2025.png",
+        "url": "/data/plots/kalbar1/scene_2025.png"
+      },
+      {
+        "date": "2026-08-08",
+        "scene_id": "S2B_MSIL2A_20260808T024529_R132_T49MCV_20260808T045442",
+        "cloud_cover": 0.012366,
+        "ndvi_mean": 0.8,
+        "year": 2026,
+        "file": "scene_2026.png",
+        "url": "/data/plots/kalbar1/scene_2026.png"
+      }
+    ],
+    "timelapse_url": "/data/plots/kalbar1/timelapse.mp4",
+    "tile_videos": []
+  },
+  "perceptron": {
+    "description": "In the 2019 image, the landscape is dominated by a continuous expanse of dense green forest cover. A dark, winding river or stream is visible in the upper left portion of the scene, meandering through the unbroken canopy.\n\nBy 2026, a significant transformation has occurred in the lower-left quadrant of the image. The previously uniform forest has been cleared and replaced with a highly organized agricultural area. This new land use is characterized by:\n- Large, rectangular plots arranged in a grid-like pattern.\n- Straight, light-colored access roads that form the boundaries between these plots.\n- Visible linear patterns within some of the plots, consistent with planting rows for crops like oil palm.\n\nThis clear geometric structure is starkly different from the natural, irregular shape of the surrounding forest and the meandering river. The presence of straight roads and blocky fields is definitive evidence of deforestation for commercial plantation agriculture.\n\nTherefore, yes, there is strong evidence that forest was converted to a plantation.",
+    "model": "perceptron-mk1.5",
+    "mean_score": 0.505,
+    "boxes": [
+      {
+        "label": "",
+        "box": [
+          0,
+          417,
+          1000,
+          866
+        ],
+        "post_cutoff_loss_share": 0.432,
+        "confirmed": true
+      },
+      {
+        "label": "",
+        "box": [
+          805,
+          903,
+          1000,
+          999
+        ],
+        "post_cutoff_loss_share": 0.139,
+        "confirmed": false
+      }
+    ],
+    "label": "AI interpretation"
+  },
+  "hansen": {
+    "loss_share_by_year": {
+      "2001": 0.0,
+      "2007": 0.0001,
+      "2008": 0.0,
+      "2011": 0.0001,
+      "2012": 0.0,
+      "2014": 0.0005,
+      "2015": 0.0001,
+      "2016": 0.0004,
+      "2017": 0.0001,
+      "2020": 0.0002,
+      "2021": 0.0001,
+      "2022": 0.0001,
+      "2023": 0.1976,
+      "2024": 0.0009
+    },
+    "loss_share_post_cutoff": 0.1987
+  },
+  "land_cover": {
+    "dataset": "Impact Observatory Annual LULC v02 + ESA WorldCover",
+    "source": "Microsoft Planetary Computer STAC",
+    "resolution_m": 10,
+    "hansen_version": "GFC-2024-v1.12",
+    "post_cutoff_loss_pixels": 11440,
+    "post_cutoff_loss_share": 0.1986,
+    "replacement_year": 2023,
+    "replacement_on_loss": {
+      "Rangeland": 0.799,
+      "Trees": 0.1102,
+      "Crops": 0.0907
+    },
+    "replacement_top": [
+      {
+        "class": "Rangeland",
+        "share": 0.799
+      },
+      {
+        "class": "Trees",
+        "share": 0.1102
+      },
+      {
+        "class": "Crops",
+        "share": 0.0907
+      }
+    ],
+    "baseline_year": 2020,
+    "baseline_on_loss_pixels": {
+      "Trees": 1.0
+    },
+    "summary": "On cleared ground, land cover is mostly Rangeland (80%), Trees (11%), Crops (9%). Impact Observatory Annual LULC (10 m) on Hansen post-2020 loss pixels. Oil palm and young plantation often register as rangeland or trees, not a named crop.",
+    "io_lulc_annual": {
+      "2020": {
+        "item_id": "49M-2020",
+        "plot_share": {
+          "Trees": 0.9996,
+          "Water": 0.0004
+        },
+        "on_post_cutoff_loss": {
+          "Trees": 1.0
+        }
+      },
+      "2021": {
+        "item_id": "49M-2021",
+        "plot_share": {
+          "Trees": 0.9998,
+          "Water": 0.0002
+        },
+        "on_post_cutoff_loss": {
+          "Trees": 1.0
+        }
+      },
+      "2022": {
+        "item_id": "49M-2022",
+        "plot_share": {
+          "Trees": 0.9994,
+          "Water": 0.0006
+        },
+        "on_post_cutoff_loss": {
+          "Trees": 1.0
+        }
+      },
+      "2023": {
+        "item_id": "49M-2023",
+        "plot_share": {
+          "Trees": 0.8225,
+          "Rangeland": 0.1588,
+          "Crops": 0.018,
+          "Water": 0.0006
+        },
+        "on_post_cutoff_loss": {
+          "Rangeland": 0.799,
+          "Trees": 0.1102,
+          "Crops": 0.0907
+        }
+      }
+    },
+    "esa_worldcover": {
+      "2020": {
+        "item_id": "ESA_WorldCover_10m_2020_v100_S03E108",
+        "plot_share": {
+          "Tree cover": 0.9975,
+          "Bare / sparse": 0.0025
+        },
+        "on_post_cutoff_loss": {
+          "Tree cover": 0.9983,
+          "Bare / sparse": 0.0017
+        }
+      },
+      "2021": {
+        "item_id": "ESA_WorldCover_10m_2021_v200_S03E108",
+        "plot_share": {
+          "Tree cover": 1.0,
+          "Grassland": 0.0
+        },
+        "on_post_cutoff_loss": {
+          "Tree cover": 1.0
+        }
+      }
+    },
+    "caveat": "WorldCover often still labels mature plantation as tree cover. IO LULC 'Crops' / 'Rangeland' on loss pixels is the clearer replacement signal; it is land cover, not a crop-species map (oil palm vs soy vs rubber)."
+  },
+  "jrc_source": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/FOREST/GFC2020/LATEST/tiles/JRC_GFC2020_V4_N0_E110.tif",
+  "chip_stats": {
+    "bbox": [
+      110.05,
+      -0.81,
+      110.11,
+      -0.75
+    ],
+    "jrc_source": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/FOREST/GFC2020/LATEST/tiles/JRC_GFC2020_V4_N0_E110.tif",
+    "chips": [
+      {
+        "id": 0,
+        "hansen_loss_share": 0.028,
+        "jrc_forest_share": 0.983,
+        "polygon": [
+          [
+            110.05,
+            -0.75
+          ],
+          [
+            110.08,
+            -0.75
+          ],
+          [
+            110.08,
+            -0.78
+          ],
+          [
+            110.05,
+            -0.78
+          ],
+          [
+            110.05,
+            -0.75
+          ]
+        ]
+      },
+      {
+        "id": 1,
+        "hansen_loss_share": 0.003,
+        "jrc_forest_share": 1.0,
+        "polygon": [
+          [
+            110.08,
+            -0.75
+          ],
+          [
+            110.11,
+            -0.75
+          ],
+          [
+            110.11,
+            -0.78
+          ],
+          [
+            110.08,
+            -0.78
+          ],
+          [
+            110.08,
+            -0.75
+          ]
+        ]
+      },
+      {
+        "id": 2,
+        "hansen_loss_share": 0.635,
+        "jrc_forest_share": 1.0,
+        "polygon": [
+          [
+            110.05,
+            -0.78
+          ],
+          [
+            110.08,
+            -0.78
+          ],
+          [
+            110.08,
+            -0.81
+          ],
+          [
+            110.05,
+            -0.81
+          ],
+          [
+            110.05,
+            -0.78
+          ]
+        ]
+      },
+      {
+        "id": 3,
+        "hansen_loss_share": 0.129,
+        "jrc_forest_share": 0.999,
+        "polygon": [
+          [
+            110.08,
+            -0.78
+          ],
+          [
+            110.11,
+            -0.78
+          ],
+          [
+            110.11,
+            -0.81
+          ],
+          [
+            110.08,
+            -0.81
+          ],
+          [
+            110.08,
+            -0.78
+          ]
+        ]
+      }
+    ]
+  },
+  "perception_tiles": {
+    "model": "perceptron-mk1.5",
+    "reasoning_effort": "high",
+    "chips": [
+      {
+        "id": 0,
+        "label": "unclear",
+        "box": null,
+        "raw": "unclear"
+      },
+      {
+        "id": 1,
+        "label": "forest_unchanged",
+        "box": null,
+        "raw": "forest_unchanged"
+      },
+      {
+        "id": 2,
+        "label": "converted_to_plantation",
+        "box": null,
+        "raw": "converted_to_plantation"
+      },
+      {
+        "id": 3,
+        "label": "converted_to_plantation",
+        "box": [
+          0,
+          250,
+          1000,
+          1000
+        ],
+        "raw": "converted_to_plantation\n<point_box mention=\"converted area with roads and rectangular blocks\" asset_idx=\"1\"> (0,250) (1000,1000) </point_box>"
+      }
+    ]
+  },
+  "confidence": {
+    "model": "perceptron-mk1.5",
+    "reasoning_effort": "medium",
+    "prompt": "The first image is an earlier Sentinel-2 satellite chip. The second is the same ground on a later date. Reply with one number from 0.0 to 1.0 and nothing else. The number is your confidence that forest in the first image was converted to plantation in the second: rectangular blocks, straight access roads, or planting rows. 0.0 means still forest or no conversion. 1.0 means a clear plantation conversion. Use a value in between when the chip is mixed or you are unsure.",
+    "window": "5 by 5 overlapping windows, each one half-overlapping its neighbors",
+    "mean_score": 0.505,
+    "windows": [
+      {
+        "id": 0,
+        "score": 0.0,
+        "box": [
+          0,
+          0,
+          223,
+          221
+        ],
+        "polygon": [
+          [
+            110.05,
+            -0.75
+          ],
+          [
+            110.07002994011975,
+            -0.75
+          ],
+          [
+            110.07002994011975,
+            -0.77
+          ],
+          [
+            110.05,
+            -0.77
+          ],
+          [
+            110.05,
+            -0.75
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 1,
+        "score": null,
+        "box": [
+          111,
+          0,
+          334,
+          221
+        ],
+        "polygon": [
+          [
+            110.05997005988024,
+            -0.75
+          ],
+          [
+            110.08,
+            -0.75
+          ],
+          [
+            110.08,
+            -0.77
+          ],
+          [
+            110.05997005988024,
+            -0.77
+          ],
+          [
+            110.05997005988024,
+            -0.75
+          ]
+        ],
+        "raw": null,
+        "error": "Generation failed."
+      },
+      {
+        "id": 2,
+        "score": 0.0,
+        "box": [
+          223,
+          0,
+          446,
+          221
+        ],
+        "polygon": [
+          [
+            110.07002994011975,
+            -0.75
+          ],
+          [
+            110.09005988023952,
+            -0.75
+          ],
+          [
+            110.09005988023952,
+            -0.77
+          ],
+          [
+            110.07002994011975,
+            -0.77
+          ],
+          [
+            110.07002994011975,
+            -0.75
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 3,
+        "score": 0.0,
+        "box": [
+          334,
+          0,
+          557,
+          221
+        ],
+        "polygon": [
+          [
+            110.08,
+            -0.75
+          ],
+          [
+            110.10002994011975,
+            -0.75
+          ],
+          [
+            110.10002994011975,
+            -0.77
+          ],
+          [
+            110.08,
+            -0.77
+          ],
+          [
+            110.08,
+            -0.75
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 4,
+        "score": 0.0,
+        "box": [
+          445,
+          0,
+          668,
+          221
+        ],
+        "polygon": [
+          [
+            110.08997005988024,
+            -0.75
+          ],
+          [
+            110.11,
+            -0.75
+          ],
+          [
+            110.11,
+            -0.77
+          ],
+          [
+            110.08997005988024,
+            -0.77
+          ],
+          [
+            110.08997005988024,
+            -0.75
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 5,
+        "score": 0.0,
+        "box": [
+          0,
+          110,
+          223,
+          331
+        ],
+        "polygon": [
+          [
+            110.05,
+            -0.7599547511312217
+          ],
+          [
+            110.07002994011975,
+            -0.7599547511312217
+          ],
+          [
+            110.07002994011975,
+            -0.7799547511312217
+          ],
+          [
+            110.05,
+            -0.7799547511312217
+          ],
+          [
+            110.05,
+            -0.7599547511312217
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 6,
+        "score": null,
+        "box": [
+          111,
+          110,
+          334,
+          331
+        ],
+        "polygon": [
+          [
+            110.05997005988024,
+            -0.7599547511312217
+          ],
+          [
+            110.08,
+            -0.7599547511312217
+          ],
+          [
+            110.08,
+            -0.7799547511312217
+          ],
+          [
+            110.05997005988024,
+            -0.7799547511312217
+          ],
+          [
+            110.05997005988024,
+            -0.7599547511312217
+          ]
+        ],
+        "raw": "",
+        "error": null
+      },
+      {
+        "id": 7,
+        "score": 0.0,
+        "box": [
+          223,
+          110,
+          446,
+          331
+        ],
+        "polygon": [
+          [
+            110.07002994011975,
+            -0.7599547511312217
+          ],
+          [
+            110.09005988023952,
+            -0.7599547511312217
+          ],
+          [
+            110.09005988023952,
+            -0.7799547511312217
+          ],
+          [
+            110.07002994011975,
+            -0.7799547511312217
+          ],
+          [
+            110.07002994011975,
+            -0.7599547511312217
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 8,
+        "score": 0.0,
+        "box": [
+          334,
+          110,
+          557,
+          331
+        ],
+        "polygon": [
+          [
+            110.08,
+            -0.7599547511312217
+          ],
+          [
+            110.10002994011975,
+            -0.7599547511312217
+          ],
+          [
+            110.10002994011975,
+            -0.7799547511312217
+          ],
+          [
+            110.08,
+            -0.7799547511312217
+          ],
+          [
+            110.08,
+            -0.7599547511312217
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 9,
+        "score": 0.0,
+        "box": [
+          445,
+          110,
+          668,
+          331
+        ],
+        "polygon": [
+          [
+            110.08997005988024,
+            -0.7599547511312217
+          ],
+          [
+            110.11,
+            -0.7599547511312217
+          ],
+          [
+            110.11,
+            -0.7799547511312217
+          ],
+          [
+            110.08997005988024,
+            -0.7799547511312217
+          ],
+          [
+            110.08997005988024,
+            -0.7599547511312217
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 10,
+        "score": 0.9,
+        "box": [
+          0,
+          221,
+          223,
+          442
+        ],
+        "polygon": [
+          [
+            110.05,
+            -0.77
+          ],
+          [
+            110.07002994011975,
+            -0.77
+          ],
+          [
+            110.07002994011975,
+            -0.79
+          ],
+          [
+            110.05,
+            -0.79
+          ],
+          [
+            110.05,
+            -0.77
+          ]
+        ],
+        "raw": "0.9",
+        "error": null
+      },
+      {
+        "id": 11,
+        "score": 0.9,
+        "box": [
+          111,
+          221,
+          334,
+          442
+        ],
+        "polygon": [
+          [
+            110.05997005988024,
+            -0.77
+          ],
+          [
+            110.08,
+            -0.77
+          ],
+          [
+            110.08,
+            -0.79
+          ],
+          [
+            110.05997005988024,
+            -0.79
+          ],
+          [
+            110.05997005988024,
+            -0.77
+          ]
+        ],
+        "raw": "0.9",
+        "error": null
+      },
+      {
+        "id": 12,
+        "score": null,
+        "box": [
+          223,
+          221,
+          446,
+          442
+        ],
+        "polygon": [
+          [
+            110.07002994011975,
+            -0.77
+          ],
+          [
+            110.09005988023952,
+            -0.77
+          ],
+          [
+            110.09005988023952,
+            -0.79
+          ],
+          [
+            110.07002994011975,
+            -0.79
+          ],
+          [
+            110.07002994011975,
+            -0.77
+          ]
+        ],
+        "raw": "",
+        "error": null
+      },
+      {
+        "id": 13,
+        "score": null,
+        "box": [
+          334,
+          221,
+          557,
+          442
+        ],
+        "polygon": [
+          [
+            110.08,
+            -0.77
+          ],
+          [
+            110.10002994011975,
+            -0.77
+          ],
+          [
+            110.10002994011975,
+            -0.79
+          ],
+          [
+            110.08,
+            -0.79
+          ],
+          [
+            110.08,
+            -0.77
+          ]
+        ],
+        "raw": "",
+        "error": null
+      },
+      {
+        "id": 14,
+        "score": 0.8,
+        "box": [
+          445,
+          221,
+          668,
+          442
+        ],
+        "polygon": [
+          [
+            110.08997005988024,
+            -0.77
+          ],
+          [
+            110.11,
+            -0.77
+          ],
+          [
+            110.11,
+            -0.79
+          ],
+          [
+            110.08997005988024,
+            -0.79
+          ],
+          [
+            110.08997005988024,
+            -0.77
+          ]
+        ],
+        "raw": "0.8",
+        "error": null
+      },
+      {
+        "id": 15,
+        "score": 1.0,
+        "box": [
+          0,
+          332,
+          223,
+          553
+        ],
+        "polygon": [
+          [
+            110.05,
+            -0.7800452488687784
+          ],
+          [
+            110.07002994011975,
+            -0.7800452488687784
+          ],
+          [
+            110.07002994011975,
+            -0.8000452488687784
+          ],
+          [
+            110.05,
+            -0.8000452488687784
+          ],
+          [
+            110.05,
+            -0.7800452488687784
+          ]
+        ],
+        "raw": "1.0",
+        "error": null
+      },
+      {
+        "id": 16,
+        "score": 1.0,
+        "box": [
+          111,
+          332,
+          334,
+          553
+        ],
+        "polygon": [
+          [
+            110.05997005988024,
+            -0.7800452488687784
+          ],
+          [
+            110.08,
+            -0.7800452488687784
+          ],
+          [
+            110.08,
+            -0.8000452488687784
+          ],
+          [
+            110.05997005988024,
+            -0.8000452488687784
+          ],
+          [
+            110.05997005988024,
+            -0.7800452488687784
+          ]
+        ],
+        "raw": "1.0",
+        "error": null
+      },
+      {
+        "id": 17,
+        "score": 1.0,
+        "box": [
+          223,
+          332,
+          446,
+          553
+        ],
+        "polygon": [
+          [
+            110.07002994011975,
+            -0.7800452488687784
+          ],
+          [
+            110.09005988023952,
+            -0.7800452488687784
+          ],
+          [
+            110.09005988023952,
+            -0.8000452488687784
+          ],
+          [
+            110.07002994011975,
+            -0.8000452488687784
+          ],
+          [
+            110.07002994011975,
+            -0.7800452488687784
+          ]
+        ],
+        "raw": "1.0",
+        "error": null
+      },
+      {
+        "id": 18,
+        "score": 0.9,
+        "box": [
+          334,
+          332,
+          557,
+          553
+        ],
+        "polygon": [
+          [
+            110.08,
+            -0.7800452488687784
+          ],
+          [
+            110.10002994011975,
+            -0.7800452488687784
+          ],
+          [
+            110.10002994011975,
+            -0.8000452488687784
+          ],
+          [
+            110.08,
+            -0.8000452488687784
+          ],
+          [
+            110.08,
+            -0.7800452488687784
+          ]
+        ],
+        "raw": "0.9",
+        "error": null
+      },
+      {
+        "id": 19,
+        "score": 0.8,
+        "box": [
+          445,
+          332,
+          668,
+          553
+        ],
+        "polygon": [
+          [
+            110.08997005988024,
+            -0.7800452488687784
+          ],
+          [
+            110.11,
+            -0.7800452488687784
+          ],
+          [
+            110.11,
+            -0.8000452488687784
+          ],
+          [
+            110.08997005988024,
+            -0.8000452488687784
+          ],
+          [
+            110.08997005988024,
+            -0.7800452488687784
+          ]
+        ],
+        "raw": "0.8",
+        "error": null
+      },
+      {
+        "id": 20,
+        "score": 0.9,
+        "box": [
+          0,
+          442,
+          223,
+          663
+        ],
+        "polygon": [
+          [
+            110.05,
+            -0.79
+          ],
+          [
+            110.07002994011975,
+            -0.79
+          ],
+          [
+            110.07002994011975,
+            -0.81
+          ],
+          [
+            110.05,
+            -0.81
+          ],
+          [
+            110.05,
+            -0.79
+          ]
+        ],
+        "raw": "0.9",
+        "error": null
+      },
+      {
+        "id": 21,
+        "score": 1.0,
+        "box": [
+          111,
+          442,
+          334,
+          663
+        ],
+        "polygon": [
+          [
+            110.05997005988024,
+            -0.79
+          ],
+          [
+            110.08,
+            -0.79
+          ],
+          [
+            110.08,
+            -0.81
+          ],
+          [
+            110.05997005988024,
+            -0.81
+          ],
+          [
+            110.05997005988024,
+            -0.79
+          ]
+        ],
+        "raw": "1.0",
+        "error": null
+      },
+      {
+        "id": 22,
+        "score": 0.0,
+        "box": [
+          223,
+          442,
+          446,
+          663
+        ],
+        "polygon": [
+          [
+            110.07002994011975,
+            -0.79
+          ],
+          [
+            110.09005988023952,
+            -0.79
+          ],
+          [
+            110.09005988023952,
+            -0.81
+          ],
+          [
+            110.07002994011975,
+            -0.81
+          ],
+          [
+            110.07002994011975,
+            -0.79
+          ]
+        ],
+        "raw": "0.0",
+        "error": null
+      },
+      {
+        "id": 23,
+        "score": null,
+        "box": [
+          334,
+          442,
+          557,
+          663
+        ],
+        "polygon": [
+          [
+            110.08,
+            -0.79
+          ],
+          [
+            110.10002994011975,
+            -0.79
+          ],
+          [
+            110.10002994011975,
+            -0.81
+          ],
+          [
+            110.08,
+            -0.81
+          ],
+          [
+            110.08,
+            -0.79
+          ]
+        ],
+        "raw": null,
+        "error": "Generation failed."
+      },
+      {
+        "id": 24,
+        "score": 0.9,
+        "box": [
+          445,
+          442,
+          668,
+          663
+        ],
+        "polygon": [
+          [
+            110.08997005988024,
+            -0.79
+          ],
+          [
+            110.11,
+            -0.79
+          ],
+          [
+            110.11,
+            -0.81
+          ],
+          [
+            110.08997005988024,
+            -0.81
+          ],
+          [
+            110.08997005988024,
+            -0.79
+          ]
+        ],
+        "raw": "0.9",
+        "error": null
+      }
+    ]
+  },
+  "methodology": {
+    "baseline": "JRC GFC2020 forest share on chips when available; Hansen tree-cover loss years for dating",
+    "imagery": "Sentinel-2 L2A via Microsoft Planetary Computer",
+    "land_cover": "Impact Observatory Annual LULC on Hansen post-cutoff loss pixels; ESA WorldCover as context",
+    "vision": "Perceptron Mk1.5 describes conversion; does not supply hectare counts",
+    "cutoff": "2020-12-31"
+  }
+}
