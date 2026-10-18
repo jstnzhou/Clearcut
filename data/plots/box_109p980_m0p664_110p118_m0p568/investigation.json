@@ -1,0 +1,97 @@
+{
+  "status": "not_found",
+  "input_hash": "75566d9755ef6f6c3cb3925481238b21c1415799d6af45763fc07351f9ea42ea",
+  "prompt_version": "b1",
+  "model": "perceptron-mk1.5",
+  "place": {
+    "village": "Ketapang",
+    "district": "Simpang Hulu",
+    "regency": "",
+    "province": "West Kalimantan",
+    "country": "Indonesia",
+    "display_name": "Simpang Hulu, Ketapang, West Kalimantan, 78850, Indonesia"
+  },
+  "report": {
+    "status": "not_found",
+    "cause": "unknown",
+    "cause_detail": "unknown",
+    "replacement_land_use": "unknown",
+    "plantation_name": "unknown",
+    "company": "unknown",
+    "event_period": "unknown",
+    "confidence": "low",
+    "evidence": [
+      {
+        "claim": "A palm-oil plantation is mentioned near Kuala Satong village, Ketapang regency.",
+        "source_ids": [
+          "S1"
+        ]
+      }
+    ],
+    "inferences": [
+      {
+        "claim": "The plot may be within or near a palm-oil plantation in Ketapang regency, but this is not confirmed by the reports.",
+        "basis": "General mention of palm-oil plantations in the region (S1) and wildfire activity in Ketapang (S2-S5)."
+      }
+    ],
+    "source_ids": [
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "S5"
+    ],
+    "caveats": [
+      "Reports focus on wildfires and orangutan rescue, not deforestation causes at the specific coordinates.",
+      "No company or concession name is provided for the plantation mentioned."
+    ]
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "title": "Orangutan rescued from fire zone in Indonesia's Borneo, battles respiratory illness - Reuters",
+      "url": "https://www.reuters.com/business/environment/orangutan-rescued-fire-zone-indonesias-borneo-battles-respiratory-illness-2026-08-30/",
+      "published": "2026-08-30"
+    },
+    {
+      "id": "S2",
+      "title": "Explainer: How severe are Indonesia's wildfires? - Reuters",
+      "url": "https://www.reuters.com/business/environment/how-severe-are-indonesias-wildfires-2026-08-31/",
+      "published": "2026-08-31"
+    },
+    {
+      "id": "S3",
+      "title": "Indigenous, civil-society groups sue Prabowo over forest fire response - Reuters",
+      "url": "https://www.reuters.com/business/environment/indigenous-civil-society-groups-sue-prabowo-over-forest-fire-response-2026-09-19/",
+      "published": "2026-09-19"
+    },
+    {
+      "id": "S4",
+      "title": "Indonesia relocates 8 orangutans into protected forest after rescue from wildfires - Greenwich Time",
+      "url": "https://www.greenwichtime.com/news/world/article/indonesia-relocates-8-orangutans-into-protected-22474598.php",
+      "published": "2026-10-13"
+    },
+    {
+      "id": "S5",
+      "title": "Indonesia intensifies aerial firefighting as wildfire haze spreads to Malaysia - AP News",
+      "url": "https://apnews.com/article/indonesia-kalimantan-sumatra-peatland-forest-fires-68c55926aa3f2615e57cd59f2449f802",
+      "published": "2026-08-24"
+    }
+  ],
+  "queries": [
+    "forest loss Ketapang Simpang Hulu West Kalimantan -0.6160555555870957 110.04914176019466 plantation concession fire road",
+    "pembukaan hutan Kebun Sawit Ketapang Simpang Hulu -0.6160555555870957 110.04914176019466"
+  ],
+  "rounds": 4,
+  "tool_calls": 4,
+  "tavily_credits": 2,
+  "usage": {
+    "prompt_tokens": 16215,
+    "completion_tokens": 2190,
+    "total_tokens": 18405
+  },
+  "elapsed_s": 22.5,
+  "errors": [],
+  "validation_errors": [],
+  "created_at": "2026-10-18T02:08:41-07:00"
+}

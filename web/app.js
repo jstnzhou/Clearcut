@@ -59,6 +59,7 @@ const state = {
   intakeItems: [],
   intakeSelectedId: null,
   confidence: null,
+  investigation: null,
   suppressClick: false,
   mapReady: false
 };
@@ -276,6 +277,131 @@ function countResult(result) {
   return state.chips.filter(function (chip) { return chip.result === result; }).length;
 }
 
+const CAUSE_LABEL = {
+  oil_palm_plantation: "Oil palm plantation",
+  pulpwood_plantation: "Pulpwood plantation",
+  rubber_plantation: "Rubber plantation",
+  other_plantation: "Other plantation",
+  smallholder_agriculture: "Smallholder agriculture",
+  mining: "Mining",
+  infrastructure: "Infrastructure",
+  fire: "Fire",
+  logging: "Logging",
+  other: "Other",
+  unknown: "Unknown"
+};
+
+function sourceById(id) {
+  const sources = (state.investigation && state.investigation.sources) || [];
+  for (let i = 0; i < sources.length; i += 1) {
+    if (sources[i].id === id) return sources[i];
+  }
+  return null;
+}
+
+function knownValue(value) {
+  const text = String(value || "").trim();
+  if (!text || text.toLowerCase() === "unknown") return "";
+  return text;
+}
+
+function asSentence(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return /[.!?]$/.test(text) ? text : text + ".";
+}
+
+function appendSourceLinks(parent, ids) {
+  let added = 0;
+  (ids || []).forEach(function (id) {
+    const source = sourceById(id);
+    if (!source) return;
+    const url = String(source.url || "");
+    if (url.indexOf("https://") !== 0 && url.indexOf("http://") !== 0) return;
+    if (added) parent.append(document.createTextNode(", "));
+    const link = document.createElement("a");
+    link.href = url;
+    link.rel = "noopener noreferrer";
+    link.target = "_blank";
+    link.textContent = source.title || id;
+    parent.append(link);
+    added += 1;
+  });
+  return added;
+}
+
+function causeSummary(report) {
+  const causeName = knownValue(CAUSE_LABEL[report.cause] || report.cause);
+  const replacement = knownValue(report.replacement_land_use);
+  const names = [knownValue(report.plantation_name), knownValue(report.company)].filter(Boolean);
+  const parts = [];
+  if (causeName) parts.push(causeName);
+  if (replacement && replacement.toLowerCase() !== causeName.toLowerCase()) parts.push(replacement);
+  if (names.length) parts.push(names.join(", "));
+  let text = parts.length ? parts.join(". ") : "No cause was identified in public reporting";
+  text = asSentence(text);
+  if (report.confidence) text += " Confidence: " + report.confidence + ".";
+  const period = knownValue(report.event_period);
+  if (period) text += " Reported period: " + asSentence(period);
+  return text;
+}
+
+function appendInvestigation() {
+  const investigation = state.investigation;
+  if (!investigation || investigation.status === "not_applicable") return;
+  if (investigation.status === "error" || !investigation.report) {
+    const line = document.createElement("p");
+    line.className = "disclaimer";
+    line.textContent = "Source lookup unavailable.";
+    findingEl.append(line);
+    return;
+  }
+  const report = investigation.report;
+  const block = document.createElement("div");
+  block.className = "cause-block";
+  const heading = document.createElement("h2");
+  heading.textContent = "Likely cause (public reporting)";
+  const summary = document.createElement("p");
+  summary.textContent = causeSummary(report);
+  block.append(heading, summary);
+  const evidence = Array.isArray(report.evidence) ? report.evidence : [];
+  if (evidence.length) {
+    const list = document.createElement("ul");
+    list.className = "cause-list";
+    evidence.forEach(function (item) {
+      const entry = document.createElement("li");
+      entry.textContent = asSentence(item && item.claim);
+      const cite = document.createElement("span");
+      cite.className = "cause-cite";
+      cite.append(document.createTextNode("Source: "));
+      if (appendSourceLinks(cite, item && item.source_ids)) entry.append(cite);
+      list.append(entry);
+    });
+    block.append(list);
+  }
+  const inferences = (Array.isArray(report.inferences) ? report.inferences : []).map(function (item) {
+    return asSentence(item && (item.claim || item.basis));
+  }).filter(Boolean);
+  const caveats = (Array.isArray(report.caveats) ? report.caveats : []).map(asSentence).filter(Boolean);
+  if (inferences.length || caveats.length) {
+    const inferHeading = document.createElement("h2");
+    inferHeading.textContent = "Inferences";
+    const list = document.createElement("ul");
+    list.className = "cause-list";
+    inferences.concat(caveats).forEach(function (text) {
+      const entry = document.createElement("li");
+      entry.textContent = text;
+      list.append(entry);
+    });
+    block.append(inferHeading, list);
+  }
+  const note = document.createElement("p");
+  note.className = "disclaimer";
+  note.textContent = "From public web reporting, not a compliance finding.";
+  block.append(note);
+  findingEl.append(block);
+}
+
 function renderFinding() {
   findingEl.replaceChildren();
   if (state.confidence && typeof state.confidence.mean_score === "number") {
@@ -322,6 +448,7 @@ function renderFinding() {
         : "Mean confidence " + mean.toFixed(2) + " across the tiles.";
     }
     findingEl.append(verdict, disclaimer, loss);
+    appendInvestigation();
     return;
   }
   if (!state.analysisLoaded) return;
@@ -336,6 +463,7 @@ function renderFinding() {
     loss.className = "loss-note";
     loss.textContent = "About 20% of this box was lost in 2023. The loss map ends in 2024.";
     findingEl.append(verdict, disclaimer, loss);
+    appendInvestigation();
     return;
   }
   const verdict = document.createElement("p");
@@ -353,6 +481,7 @@ function renderFinding() {
     list.append(item);
   });
   findingEl.append(verdict, list);
+  appendInvestigation();
 }
 
 function renderSelection() {
@@ -374,9 +503,23 @@ function renderSelection() {
 function renderPanel() {
   viewSubmission.hidden = !state.showingSubmission;
   viewUnknown.hidden = state.showingSubmission;
+  const nameEl = document.getElementById("plot-name");
+  const coordsEl = document.getElementById("plot-coords");
+  const folder = (state.plotUrl || "").split("/").filter(Boolean).pop() || "";
+  const lat = (state.bbox[1] + state.bbox[3]) / 2;
+  const lon = (state.bbox[0] + state.bbox[2]) / 2;
+  if (nameEl && state.showingSubmission) {
+    nameEl.textContent = folder === "kalbar1"
+      ? "Plot KS-19, a fictional plantation."
+      : "Plot " + folder + ".";
+  }
+  if (coordsEl && state.showingSubmission) {
+    coordsEl.textContent = "Coordinates " + lat.toFixed(2) + ", " + lon.toFixed(2) + ".";
+  }
   if (!state.showingSubmission) return;
-  statusEl.hidden = state.analysisLoaded;
-  statusEl.textContent = state.analysisLoaded ? "" : "Chip analysis is still running.";
+  const chipsReady = state.analysisLoaded || !!state.confidence;
+  statusEl.hidden = chipsReady;
+  statusEl.textContent = chipsReady ? "" : "Chip analysis is still running.";
   renderFinding();
   renderSelection();
 }
@@ -1180,7 +1323,7 @@ document.getElementById("analyze").addEventListener("click", function () {
     return;
   }
   button.disabled = true;
-  analyzeNote.textContent = "Fetching the years and scoring the tiles.";
+  analyzeNote.textContent = "Fetching the years, scoring the tiles, and looking up public reporting if a plantation is found.";
   const selected = state.intakeItems.find(function (row) { return row.id === state.intakeSelectedId; });
   const payload = {
     bbox: state.draftBbox,
@@ -1201,13 +1344,9 @@ document.getElementById("analyze").addEventListener("click", function () {
     });
   }).then(function (payload) {
     state.plotUrl = "../data/plots/" + payload.plot;
-    return loadPlot().then(function () {
-      return payload;
-    });
-  }).then(function (payload) {
-    analyzeNote.textContent = payload.cached
-      ? "Loaded a cached check for this area."
-      : "";
+    return loadPlot();
+  }).then(function () {
+    analyzeNote.textContent = "";
     showSubmission(true);
   }).catch(function (error) {
     analyzeNote.textContent = error.message || "Analysis failed";
@@ -1291,18 +1430,63 @@ async function fetchJson(url) {
   }
 }
 
+function scoreNeedsSearch(confidence) {
+  if (!confidence || confidence.maps_only || !confidence.model) return false;
+  if (typeof confidence.mean_score === "number" && confidence.mean_score >= 0.5) return true;
+  const windows = confidence.windows || [];
+  for (let i = 0; i < windows.length; i += 1) {
+    const window = windows[i];
+    if (window && window.eligible && typeof window.score === "number" && window.score >= 0.6) return true;
+  }
+  return false;
+}
+
+function requestInvestigation(plotUrl) {
+  const id = String(plotUrl || "").split("/").filter(Boolean).pop();
+  if (!id || state.investigationPending === id) return;
+  state.investigationPending = id;
+  if (statusEl) {
+    statusEl.hidden = false;
+    statusEl.textContent = "Looking up public reporting for this plot.";
+  }
+  fetch("/api/investigate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plot: id })
+  }).then(function (response) {
+    return response.json().then(function (payload) {
+      if (!response.ok) throw new Error(payload.error || "Source lookup failed");
+      return payload;
+    });
+  }).then(function (payload) {
+    if (state.plotUrl !== plotUrl) return;
+    state.investigation = payload;
+    state.investigationPending = null;
+    renderPanel();
+  }).catch(function () {
+    if (state.plotUrl !== plotUrl) return;
+    state.investigationPending = null;
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = "Source lookup unavailable.";
+    }
+  });
+}
+
 function loadPlot() {
   const plot = state.plotUrl;
   return Promise.all([
     fetchJson(plot + "/evidence.json"),
     fetchJson(plot + "/chip_stats.json"),
     fetchJson(plot + "/perception_tiles.json"),
-    fetchJson(plot + "/confidence.json")
+    fetchJson(plot + "/confidence.json"),
+    fetchJson(plot + "/investigation.json")
   ]).then(function (results) {
     const evidence = results[0];
     const stats = results[1];
     const perception = results[2];
     const confidence = results[3];
+    const investigation = results[4];
     if (evidence.ok && evidence.data) {
       if (Array.isArray(evidence.data.bbox) && evidence.data.bbox.length === 4) {
         state.bbox = evidence.data.bbox.slice();
@@ -1313,6 +1497,7 @@ function loadPlot() {
       });
     }
     state.confidence = confidence && confidence.ok ? confidence.data : null;
+    state.investigation = investigation && investigation.ok ? investigation.data : null;
     state.analysisLoaded = stats.ok && perception.ok;
     state.chips = buildChips(stats.ok ? stats.data : null, perception.ok ? perception.data : null);
     if (state.mapReady && state.showingSubmission) {
@@ -1325,5 +1510,6 @@ function loadPlot() {
       timeInput.value = String(state.scenes.length - 1);
     }
     renderPanel();
+    if (scoreNeedsSearch(state.confidence) && !state.investigation) requestInvestigation(plot);
   });
 }

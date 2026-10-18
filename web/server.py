@@ -276,6 +276,34 @@ def slug(text: str) -> str:
     return cleaned[:48] or "plot"
 
 
+def run_pipeline(steps, env, runner=None, fatal_until=1):
+    """Run analysis steps. Only steps before fatal_until can fail the request.
+
+    The plantation lookup is appended after the satellite check. Its failure is
+    logged and the request still succeeds.
+    """
+    runner = runner or subprocess.run
+    for index, step in enumerate(steps):
+        try:
+            run = runner(step, cwd=ROOT, env=env, capture_output=True, text=True, timeout=180)
+        except subprocess.TimeoutExpired as exc:
+            detail = exc.stderr or exc.stdout or "timed out"
+            if isinstance(detail, bytes):
+                detail = detail.decode("utf-8", "replace")
+            detail = str(detail).strip()[-800:]
+            if index < fatal_until:
+                return False, detail or "analysis timed out"
+            print(detail or "investigation timed out", file=sys.stderr)
+            continue
+        if getattr(run, "returncode", 1) != 0:
+            detail = (getattr(run, "stderr", None) or getattr(run, "stdout", None) or "analysis failed")
+            detail = str(detail).strip()[-800:]
+            if index < fatal_until:
+                return False, detail
+            print(detail, file=sys.stderr)
+    return True, ""
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -291,8 +319,38 @@ class Handler(SimpleHTTPRequestHandler):
             return
         super().do_GET()
 
+    def _investigate_plot(self):
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            body = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self._json(400, {"error": "Send JSON with plot."})
+            return
+        plot_id = str(body.get("plot") or "")
+        if not re.fullmatch(r"[A-Za-z0-9_]+", plot_id):
+            self._json(400, {"error": "Unknown plot."})
+            return
+        plot = PLOTS / plot_id
+        if not (plot / "confidence.json").is_file():
+            self._json(404, {"error": "That plot has no score yet."})
+            return
+        run_pipeline(
+            [[str(PYTHON), "pipeline/investigate.py", str(plot)]],
+            os.environ.copy(),
+            fatal_until=0,
+        )
+        written = plot / "investigation.json"
+        if not written.is_file():
+            self._json(500, {"error": "Source lookup did not write a report."})
+            return
+        self._json(200, json.loads(written.read_text(encoding="utf-8")))
+
     def do_POST(self):
-        if urlparse(self.path).path != "/api/analyze":
+        path = urlparse(self.path).path
+        if path == "/api/investigate":
+            self._investigate_plot()
+            return
+        if path != "/api/analyze":
             self.send_error(404)
             return
         length = int(self.headers.get("Content-Length", 0))
@@ -325,6 +383,12 @@ class Handler(SimpleHTTPRequestHandler):
         hit = cached_plot(bbox)
         if hit is not None:
             record_plot(hit, hit=True)
+            if body.get("investigate", True) and not (hit / "investigation.json").exists():
+                run_pipeline(
+                    [[str(PYTHON), "pipeline/investigate.py", str(hit)]],
+                    os.environ.copy(),
+                    fatal_until=0,
+                )
             self._json(200, {"plot": hit.name, "cached": True})
             return
 
@@ -366,9 +430,11 @@ class Handler(SimpleHTTPRequestHandler):
         bbox_arg = ",".join(str(v) for v in bbox)
         env = os.environ.copy()
         cmd = [str(PYTHON), "pipeline/analyze_fast.py", "--bbox", bbox_arg, "--out", str(plot)]
-        run = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, timeout=180)
-        if run.returncode != 0:
-            detail = (run.stderr or run.stdout or "analysis failed").strip()[-800:]
+        steps = [cmd]
+        if body.get("investigate", True):
+            steps.append([str(PYTHON), "pipeline/investigate.py", str(plot)])
+        ok, detail = run_pipeline(steps, env)
+        if not ok:
             self._json(500, {"error": detail})
             return
         record_plot(plot, hit=False)

@@ -1,0 +1,106 @@
+{
+  "status": "partially_identified",
+  "input_hash": "06293f48f9a2dde51ea26ea6c117c0fb1277ea2da399ed25c778abae65b89ec4",
+  "prompt_version": "b1",
+  "model": "perceptron-mk1.5",
+  "place": {
+    "village": "Ketapang",
+    "district": "Simpang Hulu",
+    "regency": "",
+    "province": "West Kalimantan",
+    "country": "Indonesia",
+    "display_name": "Simpang Hulu, Ketapang, West Kalimantan, 78850, Indonesia"
+  },
+  "report": {
+    "status": "partially_identified",
+    "cause": "unknown",
+    "cause_detail": "No public reporting directly identifies who cleared the land or what replaced it at this plot. A nearby wildfire was reported, but its connection to this specific loss is unconfirmed.",
+    "replacement_land_use": "unknown",
+    "plantation_name": "unknown",
+    "company": "unknown",
+    "event_period": "unknown",
+    "confidence": "low",
+    "evidence": [
+      {
+        "claim": "General deforestation data for West Kalimantan and neighboring regencies is available, but does not specify causes at this exact location.",
+        "source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4"
+        ]
+      },
+      {
+        "claim": "A wildfire near Ketapang was reported in September 2026, burning about 800 ha, but the report does not link the fire to this plot.",
+        "source_ids": [
+          "S5"
+        ]
+      }
+    ],
+    "inferences": [
+      {
+        "claim": "The absence of named companies or plantations suggests either limited reporting or that the loss may be due to non‑commercial factors such as fire.",
+        "basis": "lack_of_named_entities_in_sources"
+      }
+    ],
+    "source_ids": [
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "S5"
+    ],
+    "caveats": [
+      "Search budget exhausted; further queries could uncover additional reports."
+    ]
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "title": "Kalimantan Barat, Indonesia Deforestation Rates & Statistics",
+      "url": "https://globalnaturewatch.org/dashboards/country/IDN/12?category=forest-change&lang=fr&location=WyJjb3VudHJ5IiwiSUROIiwiMTIiXQ%3D%3D&map=eyJkYXRhc2V0cyI6W3siZGF0YXNldCI6InBvbGl0aWNhbC1ib3VuZGFyaWVzIiwibGF5ZXJzIjpbImRpc3B1dGVkLXBvbGl0aWNhbC1ib3VuZGFyaWVzIiwicG9saXRpY2FsLWJvdW5kYXJpZXMiXSwiYm91bmRhcnkiOnRydWUsIm9wYWNpdHkiOjEsInZpc2liaWxpdHkiOnRydWV9LHsiZGF0YXNldCI6Ik5ldC1DaGFuZ2UtU1RBR0lORyIsImxheWVycyI6WyJmb3Jlc3QtbmV0LWNoYW5nZSJdLCJvcGFjaXR5IjoxLCJ2aXNpYmlsaXR5Ijp0cnVlLCJwYXJhbXMiOnsidmlzaWJpbGl0eSI6dHJ1ZSwiYWRtX2xldmVsIjoiYWRtMCJ9fV0sImNhbkJvdW5kIjp0cnVlfQ%3D%3D&scrollTo=forest-gain&showMap=true",
+      "published": "2026-10-15"
+    },
+    {
+      "id": "S2",
+      "title": "Kalimantan Tengah, Indonesia Deforestation Rates & ...",
+      "url": "https://globalnaturewatch.org/dashboards/country/IDN/14?dashboardPrompts=eyJzaG93UHJvbXB0cyI6dHJ1ZSwicHJvbXB0c1ZpZXdlZCI6WyJkb3dubG9hZERhc2hib2FyZFN0YXRzIl0sInNldHRpbmdzIjp7Im9wZW4iOmZhbHNlLCJzdGVwSW5kZXgiOjAsInN0ZXBzS2V5IjoiIn0sIm9wZW4iOnRydWUsInN0ZXBzS2V5Ijoic2hhcmVXaWRnZXQifQ%3D%3D&lang=id&location=WyJjb3VudHJ5IiwiSUROIiwiMTQiXQ%3D%3D&map=eyJjZW50ZXIiOnsibGF0IjotMi41Nzg0NTMwNjA1OTE1NDYsImxuZyI6MTE4LjAxNTE1NTc5MDA2Mjc1fSwiem9vbSI6Mi41OTczODE5NDQ0NDQ5MjE4LCJjYW5Cb3VuZCI6dHJ1ZSwiZGF0YXNldHMiOlt7ImRhdGFzZXQiOiJwb2xpdGljYWwtYm91bmRhcmllcyIsImxheWVycyI6WyJkaXNwdXRlZC1wb2xpdGljYWwtYm91bmRhcmllcyIsInBvbGl0aWNhbC1ib3VuZGFyaWVzIl0sImJvdW5kYXJ5Ijp0cnVlLCJvcGFjaXR5IjoxLCJ2aXNpYmlsaXR5Ijp0cnVlfSx7ImRhdGFzZXQiOiJOZXQtQ2hhbmdlLVNUQUdJTkciLCJsYXllcnMiOlsiZm9yZXN0LW5ldC1jaGFuZ2UiXSwib3BhY2l0eSI6MSwidmlzaWJpbGl0eSI6dHJ1ZSwicGFyYW1zIjp7InZpc2liaWxpdHkiOnRydWUsImFkbV9sZXZlbCI6ImFkbTAifX1dfQ%3D%3D&showMap=true&treeLossPct=eyJoaWdobGlnaHRlZCI6ZmFsc2V9",
+      "published": "2026-10-16"
+    },
+    {
+      "id": "S3",
+      "title": "Seruyan, Indonesia, Kalimantan Tengah Deforestation ...",
+      "url": "https://globalnaturewatch.org/dashboards/country/IDN/14/13?gladAlerts=eyJsYXRlc3REYXRlIjoiMjAxOS0wNy0yMiJ9&lang=es_MX&map=eyJjZW50ZXIiOnsibGF0Ijo5LjE2OTU2NzA2ODg0ODIyNCwibG5nIjo0MC40Nzk4ODMxOTAwMDAwMX0sInpvb20iOjMuODc5MTUyNzQ2NTUyMDc4MywiY2FuQm91bmQiOnRydWUsImRhdGFzZXRzIjpbeyJvcGFjaXR5IjowLjcsInZpc2liaWxpdHkiOnRydWUsImRhdGFzZXQiOiJwcmltYXJ5LWZvcmVzdHMiLCJsYXllcnMiOlsicHJpbWFyeS1mb3Jlc3RzLTIwMDEiXX0seyJkYXRhc2V0IjoicG9saXRpY2FsLWJvdW5kYXJpZXMiLCJsYXllcnMiOlsiZGlzcHV0ZWQtcG9saXRpY2FsLWJvdW5kYXJpZXMiLCJwb2xpdGljYWwtYm91bmRhcmllcyJdLCJib3VuZGFyeSI6dHJ1ZSwib3BhY2l0eSI6MSwidmlzaWJpbGl0eSI6dHJ1ZX0seyJkYXRhc2V0IjoidHJlZS1jb3Zlci1sb3NzIiwibGF5ZXJzIjpbInRyZWUtY292ZXItbG9zcyJdLCJvcGFjaXR5IjoxLCJ2aXNpYmlsaXR5Ijp0cnVlLCJ0aW1lbGluZVBhcmFtcyI6eyJzdGFydERhdGUiOiIyMDAyLTAxLTAxIiwiZW5kRGF0ZSI6IjIwMjAtMTItMzEiLCJ0cmltRW5kRGF0ZSI6IjIwMjAtMTItMzEifSwicGFyYW1zIjp7InRocmVzaG9sZCI6MzAsInZpc2liaWxpdHkiOnRydWV9fV19&treeLossTsc=eyJoaWdobGlnaHRlZCI6ZmFsc2V9",
+      "published": "2026-10-16"
+    },
+    {
+      "id": "S4",
+      "title": "Sanggau, Indonesia, Kalimantan Barat Deforestation Rates ...",
+      "url": "https://globalnaturewatch.org/dashboards/country/IDN/12/11?category=land-cover&dashboardPrompts=eyJzaG93UHJvbXB0cyI6dHJ1ZSwicHJvbXB0c1ZpZXdlZCI6WyJkb3dubG9hZERhc2hib2FyZFN0YXRzIl0sInNldHRpbmdzIjp7Im9wZW4iOmZhbHNlLCJzdGVwSW5kZXgiOjAsInN0ZXBzS2V5IjoiIn0sIm9wZW4iOnRydWUsInN0ZXBzS2V5Ijoic2hhcmVXaWRnZXQifQ%3D%3D&lang=id&map=eyJjZW50ZXIiOnsibGF0IjotMi41Nzg0NTMwNjA1OTE1NDYsImxuZyI6MTE4LjAxNTE1NTc5MDA2Mjc1fSwiem9vbSI6Mi41OTczODE5NDQ0NDQ5MjE4LCJjYW5Cb3VuZCI6dHJ1ZSwiZGF0YXNldHMiOlt7ImRhdGFzZXQiOiJwb2xpdGljYWwtYm91bmRhcmllcyIsImxheWVycyI6WyJkaXNwdXRlZC1wb2xpdGljYWwtYm91bmRhcmllcyIsInBvbGl0aWNhbC1ib3VuZGFyaWVzIl0sImJvdW5kYXJ5Ijp0cnVlLCJvcGFjaXR5IjoxLCJ2aXNpYmlsaXR5Ijp0cnVlfSx7ImRhdGFzZXQiOiJOZXQtQ2hhbmdlLVNUQUdJTkciLCJsYXllcnMiOlsiZm9yZXN0LW5ldC1jaGFuZ2UiXSwib3BhY2l0eSI6MSwidmlzaWJpbGl0eSI6dHJ1ZSwicGFyYW1zIjp7InZpc2liaWxpdHkiOnRydWUsImFkbV9sZXZlbCI6ImFkbTAifX1dfQ%3D%3D&showMap=true&treeLossPct=eyJoaWdobGlnaHRlZCI6ZmFsc2V9",
+      "published": "2026-10-16"
+    },
+    {
+      "id": "S5",
+      "title": "Wildfire near Ketapang (Sep 24 · W), ID (2026)",
+      "url": "https://currentwildfires.com/en/fire/wildfire-near-ketapang-id-2026-4",
+      "published": "2026-09-24"
+    }
+  ],
+  "queries": [
+    "forest loss Ketapang Simpang Hulu West Kalimantan coordinates -0.6004086700192204 110.06918559542396",
+    "pembukaan hutan Simpang Hulu Ketapang near -0.60041, 110.06919",
+    "kebun sawit Simpang Hulu Ketapang near -0.60041, 110.06919"
+  ],
+  "rounds": 4,
+  "tool_calls": 4,
+  "tavily_credits": 2,
+  "usage": {
+    "prompt_tokens": 24980,
+    "completion_tokens": 1939,
+    "total_tokens": 26919
+  },
+  "elapsed_s": 20.67,
+  "errors": [],
+  "validation_errors": [],
+  "created_at": "2026-10-18T02:23:46-07:00"
+}

@@ -1,0 +1,127 @@
+{
+  "status": "partially_identified",
+  "input_hash": "9f1edc5f6cd434398dee412dc72fdd00593c9441940af7eb6b3a3ef04e226edd",
+  "prompt_version": "b1",
+  "model": "perceptron-mk1.5",
+  "place": {
+    "village": "Ketapang",
+    "district": "Simpang Hulu",
+    "regency": "",
+    "province": "West Kalimantan",
+    "country": "Indonesia",
+    "display_name": "Simpang Hulu, Ketapang, West Kalimantan, 78850, Indonesia"
+  },
+  "report": {
+    "status": "partially_identified",
+    "cause": "fire",
+    "cause_detail": "Forest and land fires in Ketapang Regency, West Kalimantan. No specific entity named as responsible for clearing the land.",
+    "replacement_land_use": "unknown",
+    "plantation_name": "unknown",
+    "company": "unknown",
+    "event_period": "2026-09-20 to 2026-10-13",
+    "confidence": "low",
+    "evidence": [
+      {
+        "claim": "Forest and land fires in Ketapang reached 12,000 hectares (S1).",
+        "source_ids": [
+          "S1"
+        ]
+      },
+      {
+        "claim": "628 hotspots detected in Ketapang; police processed 30 forest fire reports (S2).",
+        "source_ids": [
+          "S2"
+        ]
+      },
+      {
+        "claim": "Two orangutans trapped by forest fires were found in a palm-oil plantation in Pelang Village, Matan, Ketapang (S3).",
+        "source_ids": [
+          "S3"
+        ]
+      },
+      {
+        "claim": "Eight orangutan victims of forest fires were released into Batu Nyambu Protected Forest in Ketapang (S4).",
+        "source_ids": [
+          "S4"
+        ]
+      },
+      {
+        "claim": "West Kalimantan strengthened forest-fire response with troops deployed to Ketapang and North Kayong (S5).",
+        "source_ids": [
+          "S5"
+        ]
+      }
+    ],
+    "inferences": [
+      {
+        "claim": "The reported events are all about forest fires, not land conversion for plantations or other uses.",
+        "basis": "All cited sources describe fire incidents and emergency responses."
+      },
+      {
+        "claim": "No company, concession, or plantation name is mentioned as the cause of the loss at the plot’s coordinates.",
+        "basis": "None of the sources identify an actor responsible for clearing the land."
+      }
+    ],
+    "source_ids": [
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "S5"
+    ],
+    "caveats": [
+      "Search results only cover recent fire events; no reporting on land-clearing activities was found.",
+      "A single mention of a palm-oil plantation in S3 does not link it to the plot’s location."
+    ]
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "title": "KETAPANG POLICE CHIEF TACKLES WILDFIRES DIRECTLY ...",
+      "url": "https://www.youtube.com/watch?v=Mdaj8U7M-1A",
+      "published": "2026-10-04"
+    },
+    {
+      "id": "S2",
+      "title": "🔵 628 HOTSPOTS DETECTED IN KETAPANG, POLICE PROCESS 30 FOREST FIRE REPORTS",
+      "url": "https://www.youtube.com/watch?v=miHb7NMtHZk",
+      "published": "2026-09-30"
+    },
+    {
+      "id": "S3",
+      "title": "2 Orangutans Evacuated Again After Being Trapped by Forest ...",
+      "url": "https://www.youtube.com/watch?v=lYt6txa7bi0",
+      "published": "2026-09-27"
+    },
+    {
+      "id": "S4",
+      "title": "The Sight of 8 Orangutans Victims of Forest Fires Released into ...",
+      "url": "https://www.youtube.com/watch?v=6mj1q-daA5A",
+      "published": "2026-10-13"
+    },
+    {
+      "id": "S5",
+      "title": "West Kalimantan Forest Fire Response Strengthened, Troops ...",
+      "url": "https://www.youtube.com/watch?v=YKwvLfTFiOI",
+      "published": "2026-09-20"
+    }
+  ],
+  "queries": [
+    "Ketapang Simpang Hulu forest loss 2020 near -0.59822, 110.08334",
+    "pembukaan hutan Ketapang Simpang Hulu 2020 near -0.59822, 110.08334",
+    "kebun sawit Ketapang Simpang Hulu near -0.59822, 110.08334",
+    "konsesi sawit Ketapang Simpang Hulu near -0.59822, 110.08334"
+  ],
+  "rounds": 4,
+  "tool_calls": 4,
+  "tavily_credits": 1,
+  "usage": {
+    "prompt_tokens": 16914,
+    "completion_tokens": 3841,
+    "total_tokens": 20755
+  },
+  "elapsed_s": 29.03,
+  "errors": [],
+  "validation_errors": [],
+  "created_at": "2026-10-18T02:29:18-07:00"
+}

@@ -704,3 +704,27 @@ input[type="range"] {
   line-height: 1.5;
   padding: 0 8px;
 }
+
+.cause-block {
+  margin-top: 16px;
+}
+
+.cause-block a {
+  color: #eceae4;
+}
+
+.cause-block .cause-list {
+  margin: 8px 0 12px;
+  padding-left: 1.2em;
+}
+
+.cause-block li {
+  margin: 0 0 8px;
+}
+
+.cause-block .cause-cite {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}

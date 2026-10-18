@@ -1,0 +1,59 @@
+{
+  "model": "perceptron-mk1.5",
+  "reasoning_effort": "high",
+  "prompt": "This video is one frame per year of the same land, from 2020 onward, in order, at 2 frames per second. Reply with one number from 0.0 to 1.0 and nothing else. The number is your confidence that forest in the early frames was converted to plantation by the later frames: rectangular blocks, straight access roads, or planting rows. 0.0 means still forest or no conversion. 1.0 means a clear plantation conversion. Use a value in between when only part of the tile changed or you are unsure.",
+  "gated": true,
+  "perceptron_only": false,
+  "maps_only": false,
+  "layers": [
+    "forest",
+    "loss"
+  ],
+  "both_share": 0.174,
+  "mean_score": 1.0,
+  "windows": [
+    {
+      "id": 0,
+      "row": 0,
+      "col": 0,
+      "score": 1.0,
+      "seconds": 3.62,
+      "box": [
+        0,
+        0,
+        130,
+        128
+      ],
+      "polygon": [
+        [
+          110.2473290884347,
+          -0.8783144543080255
+        ],
+        [
+          110.25908303964388,
+          -0.8783144543080255
+        ],
+        [
+          110.25908303964388,
+          -0.8899074692854327
+        ],
+        [
+          110.2473290884347,
+          -0.8899074692854327
+        ],
+        [
+          110.2473290884347,
+          -0.8783144543080255
+        ]
+      ],
+      "raw": "1.0",
+      "loss_share": 0.274,
+      "forest_share": 0.68,
+      "eligible": true
+    }
+  ],
+  "fetch_s": 9.9,
+  "model_s": 4.17,
+  "total_s": 14.07,
+  "mask_error": null
+}

@@ -1,0 +1,98 @@
+{
+  "model": "perceptron-mk1.5",
+  "reasoning_effort": "high",
+  "prompt": "This video is one frame per year of the same land, from 2020 onward, in order, at 2 frames per second. Reply with one number from 0.0 to 1.0 and nothing else. The number is your confidence that forest in the early frames was converted to plantation by the later frames: rectangular blocks, straight access roads, or planting rows. 0.0 means still forest or no conversion. 1.0 means a clear plantation conversion. Use a value in between when only part of the tile changed or you are unsure.",
+  "gated": true,
+  "perceptron_only": false,
+  "maps_only": false,
+  "layers": [
+    "forest",
+    "loss"
+  ],
+  "both_share": 0.113,
+  "mean_score": 0.747,
+  "windows": [
+    {
+      "id": 0,
+      "row": 0,
+      "col": 0,
+      "score": 0.9,
+      "seconds": 4.4,
+      "box": [
+        0,
+        0,
+        922,
+        837
+      ],
+      "polygon": [
+        [
+          110.01651950786624,
+          -0.5560123755868034
+        ],
+        [
+          110.11363577332268,
+          -0.5560123755868034
+        ],
+        [
+          110.11363577332268,
+          -0.6448049644516374
+        ],
+        [
+          110.01651950786624,
+          -0.6448049644516374
+        ],
+        [
+          110.01651950786624,
+          -0.5560123755868034
+        ]
+      ],
+      "raw": "0.9",
+      "loss_share": 0.133,
+      "forest_share": 0.754,
+      "eligible": true
+    },
+    {
+      "id": 1,
+      "row": 0,
+      "col": 1,
+      "score": 0.5,
+      "seconds": 4.94,
+      "box": [
+        921,
+        0,
+        1000,
+        837
+      ],
+      "polygon": [
+        [
+          110.11353044114756,
+          -0.5560123755868034
+        ],
+        [
+          110.12185168298168,
+          -0.5560123755868034
+        ],
+        [
+          110.12185168298168,
+          -0.6448049644516374
+        ],
+        [
+          110.11353044114756,
+          -0.6448049644516374
+        ],
+        [
+          110.11353044114756,
+          -0.5560123755868034
+        ]
+      ],
+      "raw": "0.5",
+      "loss_share": 0.082,
+      "forest_share": 0.702,
+      "eligible": true
+    }
+  ],
+  "fetch_s": 22.8,
+  "model_s": 7.63,
+  "total_s": 30.69,
+  "mask_error": null
+}
