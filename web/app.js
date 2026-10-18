@@ -63,7 +63,8 @@ const state = {
   intakeSelectedId: null,
   confidence: null,
   suppressClick: false,
-  mapReady: false
+  mapReady: false,
+  plotRequest: 0
 };
 
 function formatDate(iso) {
@@ -295,7 +296,7 @@ function renderFinding() {
       : state.confidence.perceptron_only
       ? "Perceptron only. The 2020 forest map and the loss map are off, so you can compare the color with the photo."
       : state.confidence.gated
-      ? "Not a compliance finding. Color appears where 2020 forest, post-2020 tree loss, and Perceptron agree."
+      ? ""
       : "Not a compliance finding. Color is Perceptron's conversion confidence, from green to red.";
     const loss = document.createElement("p");
     loss.className = "loss-note";
@@ -324,7 +325,8 @@ function renderFinding() {
         ? "Mean confidence " + mean.toFixed(2) + " where trees were lost after 2020."
         : "Mean confidence " + mean.toFixed(2) + " across the tiles.";
     }
-    findingEl.append(verdict, disclaimer, loss);
+    if (disclaimer.textContent) findingEl.append(verdict, disclaimer, loss);
+    else findingEl.append(verdict, loss);
     return;
   }
   if (!state.analysisLoaded) return;
@@ -360,12 +362,15 @@ function renderFinding() {
 
 function renderSelection() {
   const chip = state.chips.find(function (item) { return item.id === state.selectedId; });
+  const chipBlock = document.getElementById("chip-block");
   if (!chip || !state.showingSubmission) {
-    chipEmpty.hidden = false;
+    if (chipEmpty) chipEmpty.hidden = false;
     chipReadout.hidden = true;
+    if (chipBlock) chipBlock.hidden = true;
     return;
   }
-  chipEmpty.hidden = true;
+  if (chipEmpty) chipEmpty.hidden = true;
+  if (chipBlock) chipBlock.hidden = false;
   chipReadout.hidden = false;
   document.getElementById("chip-id").textContent = chip.id + " · " + chip.quad;
   document.getElementById("chip-label").textContent = chip.perceptron || "pending";
@@ -374,13 +379,57 @@ function renderSelection() {
   document.getElementById("chip-result").textContent = RESULT_NAME[chip.result] || chip.result;
 }
 
+function formatPlace(evidence, submission) {
+  const name = submission && submission.name;
+  const lat = evidence && typeof evidence.lat === "number" ? evidence.lat : null;
+  const lon = evidence && typeof evidence.lon === "number" ? evidence.lon : null;
+  const plotName = document.getElementById("plot-name");
+  const plotCoords = document.getElementById("plot-coords");
+  if (plotName) {
+    if (state.plotUrl && state.plotUrl.endsWith("kalbar1")) plotName.textContent = "Plot KS-19, a fictional submission.";
+    else if (name) plotName.textContent = name;
+    else plotName.textContent = "This plot";
+  }
+  if (plotCoords) {
+    plotCoords.textContent = lat !== null && lon !== null
+      ? "Latitude " + lat.toFixed(2) + ", longitude " + lon.toFixed(2) + "."
+      : "";
+  }
+}
+
+function refreshPrompt() {
+  const lead = document.getElementById("panel-lead");
+  const copy = document.getElementById("unknown-copy");
+  const button = document.getElementById("analyze");
+  if (button && button.disabled) return;
+  if (state.showingSubmission) {
+    if (lead) lead.textContent = "Red is likely planted. Green is not. This is not a compliance finding.";
+    return;
+  }
+  if (lead) lead.textContent = "Compare a boundary with the forest that was there in 2020.";
+  if (!copy) return;
+  const ready = !!state.draftBbox;
+  if (state.tool === "shape") {
+    copy.textContent = ready ? "Shape is set. Check it when you are ready." : "Drag a shape around the plot.";
+  } else if (state.tool === "upload") {
+    copy.textContent = ready ? "Boundary is set. Check it when you are ready." : "Upload a file or paste GeoJSON below.";
+  } else if (state.tool === "pan") {
+    copy.textContent = "Move the map, or switch to Box or Shape to draw.";
+  } else {
+    copy.textContent = ready ? "Box is set. Check it when you are ready." : "Drag a box around the plot.";
+  }
+}
+
 function renderPanel() {
   viewSubmission.hidden = !state.showingSubmission;
   viewUnknown.hidden = state.showingSubmission;
+  refreshPrompt();
   if (!state.showingSubmission) return;
   const chipsReady = state.analysisLoaded || !!state.confidence;
   statusEl.hidden = chipsReady;
-  statusEl.textContent = chipsReady ? "" : "Chip analysis is still running.";
+  statusEl.textContent = chipsReady ? "" : "Still scoring the tiles.";
+  const chipBlock = document.getElementById("chip-block");
+  if (chipBlock) chipBlock.hidden = !state.chips.length;
   renderFinding();
   renderSelection();
 }
@@ -400,7 +449,8 @@ function clipImageToShape(url, bbox, geometry) {
   if (!geometry || (geometry.type !== "Polygon" && geometry.type !== "MultiPolygon")) {
     return Promise.resolve(url);
   }
-  if (clippedImages[url]) return Promise.resolve(clippedImages[url]);
+  const clipKey = url + "|" + (geometry ? JSON.stringify(geometry.coordinates) : "");
+  if (clippedImages[clipKey]) return Promise.resolve(clippedImages[clipKey]);
   return new Promise(function (resolve) {
     const img = new Image();
     img.onload = function () {
@@ -433,7 +483,7 @@ function clipImageToShape(url, bbox, geometry) {
         });
         ctx.fill("evenodd");
         const shown = canvas.toDataURL("image/png");
-        clippedImages[url] = shown;
+        clippedImages[clipKey] = shown;
         resolve(shown);
       } catch (error) {
         resolve(url);
@@ -772,7 +822,7 @@ function selectIntakeItem(id) {
     return;
   }
   state.intakeSelectedId = id;
-  intakeNote.textContent = "Selected “" + item.label + "”. Analyze when ready.";
+  intakeNote.textContent = "“" + item.label + "” is selected. Check it when you are ready.";
   renderIntakeFeatures(state.intakeItems);
   showUnknown(item.feature, item.bbox.slice(), {
     inputMethod: state.intakeMethod,
@@ -786,16 +836,6 @@ async function ingestParsed(parsed) {
   if (intakeFileName) intakeFileName.textContent = parsed.filename || "";
   state.intakeSelectedId = null;
   renderIntakeFeatures(parsed.items);
-}
-
-async function loadSampleProperty() {
-  intakeNote.textContent = "Loading sample GeoJSON…";
-  const response = await fetch("/data/samples/kalbar_property.geojson");
-  if (!response.ok) throw new Error("Sample property file missing.");
-  const text = await response.text();
-  const items = window.ClearcutIntake.normalizeGeoJSON(text);
-  await ingestParsed({ method: "sample_geojson", items: items, filename: "kalbar_property.geojson" });
-  intakeNote.textContent = "Sample West Kalimantan plot loaded.";
 }
 
 function selectChip(id) {
@@ -902,13 +942,7 @@ function setTool(tool) {
   const intake = document.getElementById("intake");
   if (intake) intake.classList.toggle("intake-focus", tool === "upload");
 
-  const copy = document.getElementById("unknown-copy");
-  if (copy && !state.showingSubmission) {
-    if (tool === "shape") copy.textContent = "Drag any shape around the property, then analyze.";
-    else if (tool === "box") copy.textContent = "Drag a box around the property, then analyze.";
-    else if (tool === "upload") copy.textContent = "Upload or paste GeoJSON, KML, or GPX below.";
-    else copy.textContent = "Pan the map, or choose Box / Shape / Upload.";
-  }
+  refreshPrompt();
 
   if (tool === "upload" && intake) {
     intake.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1160,12 +1194,31 @@ window.addEventListener("keydown", function (event) {
 bindModeFloatHover();
 
 
+function hidePlotLayers() {
+  if (!state.mapReady || !map) return;
+  ["scene", "confidence"].forEach(function (id) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
+  });
+}
+
 function openPlot(id) {
   if (!/^[A-Za-z0-9_]+$/.test(id)) return Promise.resolve();
-  analyzeNote.textContent = "";
+  analyzeNote.textContent = "Opening this checked plot.";
+  state.plotRequest += 1;
   state.plotUrl = "../data/plots/" + id;
+  state.draftBbox = null;
+  state.draftFeature = null;
+  state.draftGeometry = null;
+  state.confidence = null;
+  state.scenes = [];
+  state.chips = [];
+  hidePlotLayers();
+  setDraft(null);
   return loadPlot().then(function () {
     showSubmission(true);
+    analyzeNote.textContent = "Showing the saved check for this plot.";
+  }).catch(function (error) {
+    analyzeNote.textContent = error && error.message ? error.message : "This checked plot could not be opened.";
   });
 }
 
@@ -1277,26 +1330,36 @@ function setProcessing(on, label) {
 }
 
 function startProcessingCycle() {
-  const steps = ["Processing", "Fetching years", "Scoring tiles", "Please wait"];
+  const steps = ["Reading the boundary", "Fetching the years", "Scoring the tiles"];
   let index = 0;
   setProcessing(true, steps[0]);
   processingTimer = setInterval(function () {
-    index = (index + 1) % steps.length;
+    index += 1;
+    if (index >= steps.length) {
+      clearInterval(processingTimer);
+      processingTimer = null;
+      return;
+    }
     if (processingLabel) processingLabel.textContent = steps[index];
-  }, 1400);
+  }, 1600);
 }
 
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
-  if (!state.draftBbox) return;
+  if (!state.draftBbox) {
+    analyzeNote.textContent = "Draw or upload a boundary first.";
+    return;
+  }
   const boundsError = window.ClearcutIntake && window.ClearcutIntake.validateBBox(state.draftBbox);
   if (boundsError) {
     analyzeNote.textContent = boundsError;
     return;
   }
   button.disabled = true;
-  button.textContent = "Loading…";
-  analyzeNote.textContent = "Fetching the years and scoring the tiles.";
+  button.textContent = "Checking…";
+  analyzeNote.textContent = "Pulling the satellite years, then scoring the tiles.";
+  const lead = document.getElementById("panel-lead");
+  if (lead) lead.textContent = "The check is running.";
   startProcessingCycle();
   const selected = state.intakeItems.find(function (row) { return row.id === state.intakeSelectedId; });
   const payload = {
@@ -1325,15 +1388,17 @@ document.getElementById("analyze").addEventListener("click", function () {
     });
   }).then(function (payload) {
     analyzeNote.textContent = payload.cached
-      ? "Loaded a cached check for this area."
-      : "";
+      ? "This area was already checked. Showing that result."
+      : "Check finished.";
     showSubmission(true);
   }).catch(function (error) {
-    analyzeNote.textContent = error.message || "Analysis failed";
+    analyzeNote.textContent = error.message || "The check did not finish. Try again.";
+    const lead = document.getElementById("panel-lead");
+    if (lead && !state.showingSubmission) lead.textContent = "Compare a boundary with the forest that was there in 2020.";
   }).finally(function () {
     setProcessing(false);
     button.disabled = false;
-    button.textContent = "Analyze this area";
+    button.textContent = "Check this plot";
   });
 });
 
@@ -1344,7 +1409,7 @@ document.getElementById("intake-file").addEventListener("change", function (even
   window.ClearcutIntake.parseUpload(file).then(function (parsed) {
     return ingestParsed(parsed);
   }).then(function () {
-    intakeNote.textContent = "Loaded " + file.name + ". Select a feature if needed, then analyze.";
+    intakeNote.textContent = file.name + " is loaded. Check it when you are ready.";
   }).catch(function (error) {
     intakeNote.textContent = error.message || "Could not read that file.";
   });
@@ -1356,15 +1421,9 @@ document.getElementById("intake-paste-btn").addEventListener("click", function (
   window.ClearcutIntake.parsePaste(text).then(function (parsed) {
     return ingestParsed(parsed);
   }).then(function () {
-    intakeNote.textContent = "Pasted GeoJSON ready. Analyze when ready.";
+    intakeNote.textContent = "That polygon is ready. Check it when you are ready.";
   }).catch(function (error) {
     intakeNote.textContent = error.message || "Could not parse that GeoJSON.";
-  });
-});
-
-document.getElementById("intake-sample").addEventListener("click", function () {
-  loadSampleProperty().catch(function (error) {
-    intakeNote.textContent = error.message || "Could not load sample.";
   });
 });
 
@@ -1430,6 +1489,7 @@ async function fetchJson(url) {
 
 function loadPlot() {
   const plot = state.plotUrl;
+  const request = state.plotRequest;
   return Promise.all([
     fetchJson(plot + "/evidence.json"),
     fetchJson(plot + "/chip_stats.json"),
@@ -1442,22 +1502,24 @@ function loadPlot() {
     const perception = results[2];
     const confidence = results[3];
     const submission = results[4];
-    if (evidence.ok && evidence.data) {
-      if (Array.isArray(evidence.data.bbox) && evidence.data.bbox.length === 4) {
-        state.bbox = evidence.data.bbox.slice();
-      }
-      state.scenes = scenesFrom(evidence.data).filter(function (scene) {
-        const year = Number(String(scene.date).slice(0, 4));
-        return !(plot.endsWith("kalbar1") && (year === 2022 || year === 2024));
-      });
-      if (evidence.data.geometry) setPropertyBoundary(evidence.data.geometry);
+    if (request !== state.plotRequest) return;
+    if (!evidence.ok || !evidence.data || !Array.isArray(evidence.data.bbox) || evidence.data.bbox.length !== 4) {
+      throw new Error("This checked plot has no map bounds.");
     }
-    if ((!state.draftGeometry) && submission.ok && submission.data && submission.data.geometry) {
-      setPropertyBoundary(submission.data.geometry);
-    }
+    state.bbox = evidence.data.bbox.slice();
+    state.scenes = scenesFrom(evidence.data).filter(function (scene) {
+      const year = Number(String(scene.date).slice(0, 4));
+      return !(plot.endsWith("kalbar1") && (year === 2022 || year === 2024));
+    });
+    const geometry = evidence.data.geometry
+      || (submission.ok && submission.data && submission.data.geometry)
+      || null;
+    setPropertyBoundary(geometry);
     state.confidence = confidence && confidence.ok ? confidence.data : null;
+    formatPlace(evidence.ok ? evidence.data : null, submission.ok ? submission.data : null);
     state.analysisLoaded = stats.ok && perception.ok;
     state.chips = buildChips(stats.ok ? stats.data : null, perception.ok ? perception.data : null);
+    if (request !== state.plotRequest) return;
     if (state.mapReady && state.showingSubmission) {
       if (state.draftFeature) setDraft(state.draftFeature);
       applyChips();
