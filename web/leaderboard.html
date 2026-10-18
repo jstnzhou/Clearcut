@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clearcut · Investigation board</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="board-page">
+  <main class="board-shell">
+    <header>
+      <p class="eyebrow"><a href="./">Clearcut</a></p>
+      <h1>Investigation board</h1>
+      <p class="sub">Plots ranked by conversion confidence. Highest scores are the least trusted as still-forest after 2020, and should be reviewed first.</p>
+    </header>
+    <p id="board-updated" class="hint"></p>
+    <div id="board-list"></div>
+  </main>
+  <script src="board.js"></script>
+  <script>
+    const list = document.getElementById("board-list");
+    const updated = document.getElementById("board-updated");
+    fetchBoard().then(function (data) {
+      if (data.updated) {
+        updated.textContent = "Updated " + String(data.updated).replace("T", " ").replace("Z", " UTC") +
+          " · " + ((data.plots && data.plots.length) || 0) + " plots";
+      }
+      paintBoard(list, data, {
+        onOpen: function (plot) {
+          window.location.assign(plotHref(plot.id));
+        }
+      });
+    }).catch(function (error) {
+      updated.textContent = error.message || "Could not load the board.";
+    });
+  </script>
+</body>
+</html>
