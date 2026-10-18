@@ -4,71 +4,209 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>OpenCanopy</title>
+  <meta name="description" content="An independent satellite check a government can run when a plantation asks to be approved.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,560&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..500&family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="story.css">
 </head>
-<body>
-  <header class="bar">
-    <a class="brand" href="index.html">OpenCanopy</a>
+<body class="story">
+  <header class="topbar">
+    <a class="wordmark" href="index.html" aria-label="OpenCanopy home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="2"/><path d="M2.5 13.5h19M9 13.5V21.5M15 13.5V21.5"/></svg>
+      OpenCanopy
+    </a>
     <nav>
+      <a href="#method">Method</a>
+      <a href="#limits">Limits</a>
+      <a href="#sources">Sources</a>
       <a href="demo.html">Demo</a>
-      <a href="about.html">About</a>
+      <a class="nav-cta" href="case.html">Open the case file</a>
     </nav>
   </header>
 
-  <section class="stage">
-    <div>
-      <p class="eyebrow">EU deforestation regulation · 30 Dec 2026</p>
-      <h1>880 hectares, gone in one year.</h1>
-      <p class="lede">Forest through 2021. Cleared in 2023. Drag the scene. Large operators file under the EU rule on 30 December 2026.</p>
-      <div class="actions">
-        <a class="primary" href="demo.html">Open the demo</a>
-        <a href="about.html">How a check works</a>
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">EU Deforestation Regulation · forest cutoff 31 Dec 2020</p>
+      <h1>The plantation describes the land.<br><em>The satellites remember it.</em></h1>
+      <p class="lede">OpenCanopy is an independent check a government can run when a plantation asks to be approved. Give it one submitted plot. It returns the satellite record back to the cutoff, and whether that record supports approval.</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#story">Follow one plot</a>
+        <a class="btn ghost" href="case.html">Skip to the case file</a>
       </div>
     </div>
-    <figure class="viewer compare" id="compare">
-      <img class="base" alt="The same plot in 2023, after the clearing" src="../data/plots/kalbar1/scene_2023.png">
-      <img class="cover" id="cover" alt="The same plot in 2021, still forest" src="../data/plots/kalbar1/scene_2021.png">
-      <input id="wipe" type="range" min="0" max="100" value="62" aria-label="Compare 2021 and 2023">
-      <figcaption class="hud">
-        <div>
-          <span>Plot KS-19 · fictional</span>
-          <strong>2021 → 2023</strong>
+    <dl class="hero-facts mono">
+      <div><dt>Plot</dt><dd>KS-19 · fictional applicant</dd></div>
+      <div><dt>Location</dt><dd id="hero-coords">0.7800° S, 110.0800° E</dd></div>
+      <div><dt>Record</dt><dd>Sentinel-2 · Hansen GFC v1.12</dd></div>
+    </dl>
+    <a class="scroll-cue mono" href="#story">Scroll <span aria-hidden="true">↓</span></a>
+  </section>
+
+  <!-- The story: the frame stays pinned while the steps scroll past it. -->
+  <section class="scrolly" id="story" aria-label="One plot, 2019 to 2026">
+    <div class="sticky">
+      <figure class="stage">
+        <div class="frame" id="stage-frame">
+          <img class="layer" data-year="2019" alt="">
+          <img class="layer" data-year="2020" alt="">
+          <img class="layer" data-year="2023" alt="">
+          <img class="layer" data-year="2026" alt="">
+          <canvas id="stage-loss" aria-hidden="true"></canvas>
+          <div class="cutoff-stamp mono" aria-hidden="true">
+            <span>Forest cutoff</span>
+            <strong>31 · XII · 2020</strong>
+          </div>
+          <div class="callout" data-for="river" aria-hidden="true"><i></i><span>River, unchanged</span></div>
+          <div class="callout right" data-for="roads" aria-hidden="true"><i></i><span>Straight access roads</span></div>
+          <div class="callout" data-for="smoke" aria-hidden="true"><i></i><span>Smoke. Not in the loss record.</span></div>
         </div>
-        <span>West Kalimantan</span>
-      </figcaption>
-    </figure>
+        <figcaption class="hud mono">
+          <span id="hud-date">14 Sep 2019</span>
+          <span id="hud-source">Sentinel-2 L2A · cloud 3%</span>
+        </figcaption>
+        <div class="meter" aria-hidden="true">
+          <div class="meter-label mono"><span>Forest lost after the cutoff</span><strong id="meter-value">0 ha</strong></div>
+          <div class="meter-track"><div class="meter-fill" id="meter-fill"></div></div>
+        </div>
+        <ol class="years mono" id="story-years" aria-hidden="true"></ol>
+      </figure>
+    </div>
+
+    <div class="steps">
+      <article class="step" data-step="submitted">
+        <p class="eyebrow">The submission</p>
+        <h2>A plantation in West Kalimantan asks to be approved.</h2>
+        <p>It sends one thing a reviewer can check: the location of the plot. Every other claim on the form is the applicant’s own word.</p>
+      </article>
+      <article class="step" data-step="2019">
+        <p class="eyebrow mono">14 Sep 2019</p>
+        <h2>Before the cutoff, it was forest.</h2>
+        <p>Unbroken canopy across the whole box. A river winds through the upper left. Mean NDVI <span class="mono">0.88</span>.</p>
+      </article>
+      <article class="step" data-step="cutoff">
+        <p class="eyebrow mono">31 Dec 2020</p>
+        <h2>The date the law looks back to.</h2>
+        <p>Forest turned into farmland after this day cannot supply the EU market. The duty starts in December 2026. The forest that counts is the forest of 2020.</p>
+      </article>
+      <article class="step" data-step="loss">
+        <p class="eyebrow mono">Hansen loss year · 2023</p>
+        <h2>Then, in one year, about <span class="mono" id="step-ha">880</span> hectares.</h2>
+        <p>Each red cell is a 30-metre pixel the Hansen Global Forest Change map records as lost. Almost all of the post-2020 loss on this plot falls in 2023.</p>
+      </article>
+      <article class="step" data-step="2026">
+        <p class="eyebrow mono">8 Aug 2026</p>
+        <h2>Today the ground has rows, roads and blocks.</h2>
+        <p>A vision model reads the current image and finds rectangular plots in a grid, straight access roads, and planting rows. The loss map ends in 2024, so this image shows what the land is now. It is not a 2026 detection.</p>
+      </article>
+      <article class="step" data-step="regions">
+        <p class="eyebrow">Cross-check</p>
+        <h2>Two regions marked. Only one holds up.</h2>
+        <ul class="region-list">
+          <li><span class="tag confirmed">Confirmed</span><span>Large lower region. <span class="mono">43%</span> lost after 2020.</span></li>
+          <li><span class="tag inconclusive">Inconclusive</span><span>Small corner. <span class="mono">14%</span> lost, not enough to confirm. A person reviews it.</span></li>
+        </ul>
+      </article>
+      <article class="step" data-step="verdict">
+        <p class="eyebrow">What OpenCanopy stands behind</p>
+        <blockquote class="verdict-quote">This plot shows post-2020 tree-cover loss consistent with plantation conversion.</blockquote>
+        <p>The record does not support approval. The government decides.</p>
+        <a class="btn primary" href="case.html">Read the full case file <span aria-hidden="true">→</span></a>
+      </article>
+    </div>
   </section>
 
-  <section class="bento">
-    <article class="wide">
-      <em>01</em>
-      <h2>Draw the box</h2>
-      <p>The supplier names the land. The reviewer draws that rectangle, and nothing outside it is scored.</p>
-    </article>
-    <article>
-      <em>02</em>
-      <h2>Scrub the years</h2>
-      <p>2020 through the latest clear scene, one frame at a time.</p>
-    </article>
-    <article>
-      <em>03</em>
-      <h2>Read the record</h2>
-      <p>Forest in 2020, trees lost after, and a second opinion on whether the loss looks planted.</p>
-    </article>
+  <section class="method" id="method">
+    <header class="section-head">
+      <p class="eyebrow">Method</p>
+      <h2>Four records, laid on the same ground.</h2>
+    </header>
+    <ol class="method-grid">
+      <li>
+        <span class="num mono">01</span>
+        <div class="method-art art-pair" aria-hidden="true"><i></i><i></i></div>
+        <h3>Two pictures</h3>
+        <p>The clearest Sentinel-2 scene before the cutoff, and the clearest one now. Same box, same season where possible.</p>
+      </li>
+      <li>
+        <span class="num mono">02</span>
+        <div class="method-art art-pixels" aria-hidden="true"><canvas id="art-loss"></canvas></div>
+        <h3>The loss year</h3>
+        <p>Hansen Global Forest Change marks the year each 30 m pixel lost its trees, through 2024.</p>
+      </li>
+      <li>
+        <span class="num mono">03</span>
+        <div class="method-art art-boxes" aria-hidden="true"><i></i><i></i></div>
+        <h3>What it became</h3>
+        <p>A vision model reads the current image and outlines regions that look converted: blocks, roads, rows.</p>
+      </li>
+      <li>
+        <span class="num mono">04</span>
+        <div class="method-art art-check" aria-hidden="true"><i></i><i></i></div>
+        <h3>The cross-check</h3>
+        <p>A region is confirmed only when the loss map shows substantial clearing inside it after 2020. Anything else stays inconclusive.</p>
+      </li>
+    </ol>
   </section>
-  <p class="note">A check can show post-2020 tree-cover loss consistent with plantation conversion. It is not a compliance finding.</p>
 
-  <script>
-    const wipe = document.getElementById("wipe");
-    const cover = document.getElementById("cover");
-    function paint() {
-      cover.style.clipPath = "inset(0 " + (100 - Number(wipe.value)) + "% 0 0)";
-    }
-    wipe.addEventListener("input", paint);
-    paint();
-  </script>
+  <section class="limits" id="limits">
+    <header class="section-head">
+      <p class="eyebrow">Limits</p>
+      <h2>What a check can say, and what it never will.</h2>
+    </header>
+    <div class="ledger">
+      <div class="ledger-col says">
+        <h3>Says</h3>
+        <ul>
+          <li>This plot shows post-2020 tree-cover loss consistent with plantation conversion.</li>
+          <li>This region is inconclusive and needs a person.</li>
+          <li>No post-2020 loss and no conversion in the imagery: consistent with the applicant’s claim.</li>
+        </ul>
+      </div>
+      <div class="ledger-col never">
+        <h3>Never says</h3>
+        <ul>
+          <li><s>Non-compliant</s>, <s>illegal</s>, or <s>banned</s>. Those are findings for an authority.</li>
+          <li><s>A supplier score</s>. A check is about one piece of ground, not a company.</li>
+          <li><s>Detected in 2026</s>. The loss map ends in 2024. Newer images show what the land is now.</li>
+          <li><s>An enhanced image</s>. Every picture is the satellite scene as delivered.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="public">
+    <div class="public-inner">
+      <p class="eyebrow">Public by design</p>
+      <h2>People who live with that forest can read the same pack.</h2>
+      <p>Approval rests on the images and the loss map, not on the applicant’s description of the land. Every check carries its scene IDs, dates and cloud cover, so anyone can pull the same data and see the same thing.</p>
+    </div>
+  </section>
+
+  <section class="sources" id="sources">
+    <header class="section-head">
+      <p class="eyebrow">Sources</p>
+      <h2>Everything on this page comes from open data.</h2>
+    </header>
+    <dl class="source-list">
+      <div><dt>Imagery</dt><dd>Copernicus Sentinel-2 L2A, via Microsoft Planetary Computer</dd></div>
+      <div><dt>Loss year</dt><dd>Hansen Global Forest Change, GFC-2024-v1.12 (loss through 2024)</dd></div>
+      <div><dt>Forest in 2020</dt><dd>JRC Global Forest Cover 2020, v4</dd></div>
+      <div><dt>Vision model</dt><dd>Perceptron Mk1.5. Asked only whether converted land looks planted.</dd></div>
+      <div><dt>Applicant</dt><dd>Plot KS-19 is fictional. The coordinates and the landscape are real.</dd></div>
+    </dl>
+  </section>
+
+  <footer class="foot">
+    <div>
+      <a class="wordmark" href="index.html">OpenCanopy</a>
+      <p>Built at DubHacks 2026.</p>
+    </div>
+    <a class="btn primary" href="case.html">Open the case file <span aria-hidden="true">→</span></a>
+  </footer>
+
+  <script src="plot.js"></script>
+  <script src="story.js"></script>
 </body>
 </html>

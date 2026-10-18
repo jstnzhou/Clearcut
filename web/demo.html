@@ -51,29 +51,24 @@
     <section id="view-unknown">
       <p class="unknown-copy">Draw a rectangle on the map, then analyze it.</p>
       <button id="analyze" type="button">Analyze this area</button>
-      <button id="open-board" type="button">Checked plots</button>
     </section>
 
-    <details class="dev">
-      <summary>Coordinates</summary>
-      <form id="fly-form">
-        <label>Lat
-          <input id="lat" name="lat" type="number" step="any" value="-0.78" inputmode="decimal">
-        </label>
-        <label>Lon
-          <input id="lon" name="lon" type="number" step="any" value="110.08" inputmode="decimal">
-        </label>
-        <button type="submit">Go</button>
-      </form>
-      <p id="fly-note" class="hint"></p>
-    </details>
+    <form id="fly-form">
+      <label>Lat
+        <input id="lat" name="lat" type="text" inputmode="decimal" value="-0.78" autocomplete="off">
+      </label>
+      <label>Lon
+        <input id="lon" name="lon" type="text" inputmode="decimal" value="110.08" autocomplete="off">
+      </label>
+      <button type="submit">Go</button>
+    </form>
+    <p id="fly-note" class="hint"></p>
+    <button id="open-board" type="button">Checked plots</button>
 
     <h2>Legend</h2>
     <ul class="legend">
-      <li><i class="swatch conv"></i> Confirmed conversion</li>
-      <li><i class="swatch forest"></i> Still forest</li>
-      <li><i class="swatch old"></i> Old plantation</li>
-      <li><i class="swatch inc"></i> Inconclusive</li>
+      <li><i class="swatch loss"></i> Red, likely planted</li>
+      <li><i class="swatch forest"></i> Green, not planted</li>
     </ul>
   </aside>
 

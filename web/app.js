@@ -848,6 +848,7 @@ document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
   if (!state.draftBbox) return;
   button.disabled = true;
+  button.textContent = "Loading…";
   analyzeNote.textContent = "Fetching the years and scoring the tiles.";
   fetch("/api/analyze", {
     method: "POST",
@@ -872,6 +873,7 @@ document.getElementById("analyze").addEventListener("click", function () {
     analyzeNote.textContent = error.message || "Analysis failed";
   }).finally(function () {
     button.disabled = false;
+    button.textContent = "Analyze this area";
   });
 });
 
@@ -896,17 +898,33 @@ if (playButton) {
 }
 document.getElementById("overlay").addEventListener("input", applyOverlayOpacity);
 
+function parseLatLon(latRaw, lonRaw) {
+  const latText = String(latRaw || "").trim();
+  const lonText = String(lonRaw || "").trim();
+  const pair = latText.match(/^(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)$/);
+  if (pair && !lonText) return { lat: Number(pair[1]), lon: Number(pair[2]) };
+  return { lat: Number(latText), lon: Number(lonText) };
+}
+
 document.getElementById("fly-form").addEventListener("submit", function (event) {
   event.preventDefault();
-  const lat = Number(document.getElementById("lat").value);
-  const lon = Number(document.getElementById("lon").value);
+  const parsed = parseLatLon(document.getElementById("lat").value, document.getElementById("lon").value);
+  const lat = parsed.lat;
+  const lon = parsed.lon;
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-    flyNote.textContent = "Enter a latitude and a longitude.";
+    flyNote.textContent = "Latitude must be between -90 and 90, and longitude between -180 and 180.";
     return;
   }
   flyNote.textContent = "";
   if (!map) return;
-  map.flyTo({ center: [lon, lat], zoom: 10, essential: true });
+  map.stop();
+  map.easeTo({
+    center: [lon, lat],
+    zoom: Math.max(map.getZoom(), 11),
+    padding: fitPadding(),
+    duration: 700,
+    essential: true
+  });
 });
 
 async function fetchJson(url) {
