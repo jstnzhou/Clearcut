@@ -578,11 +578,30 @@ function sketchCollection(points, closed) {
   return { type: "FeatureCollection", features: features };
 }
 
+function setPropertyBoundary(geometry) {
+  if (!geometry) {
+    state.draftGeometry = null;
+    state.draftFeature = null;
+    setDraft(null);
+    return;
+  }
+  const feature = {
+    type: "Feature",
+    properties: { role: "property" },
+    geometry: geometry
+  };
+  state.draftGeometry = geometry;
+  state.draftFeature = feature;
+  setDraft(feature);
+}
+
 function displaySubmission() {
   state.showingSubmission = true;
   state.selectedId = null;
   if (state.mapReady) {
-    setDraft(null);
+    // Keep the drawn/uploaded polygon outline — do not fall back to the bbox square.
+    if (state.draftFeature) setDraft(state.draftFeature);
+    else setDraft(null);
     setTime(timeInput.value);
     if (map.getLayer("scene")) map.setLayoutProperty("scene", "visibility", "visible");
     applyChips();
@@ -1297,12 +1316,14 @@ function loadPlot() {
     fetchJson(plot + "/evidence.json"),
     fetchJson(plot + "/chip_stats.json"),
     fetchJson(plot + "/perception_tiles.json"),
-    fetchJson(plot + "/confidence.json")
+    fetchJson(plot + "/confidence.json"),
+    fetchJson(plot + "/submission.json")
   ]).then(function (results) {
     const evidence = results[0];
     const stats = results[1];
     const perception = results[2];
     const confidence = results[3];
+    const submission = results[4];
     if (evidence.ok && evidence.data) {
       if (Array.isArray(evidence.data.bbox) && evidence.data.bbox.length === 4) {
         state.bbox = evidence.data.bbox.slice();
@@ -1311,11 +1332,16 @@ function loadPlot() {
         const year = Number(String(scene.date).slice(0, 4));
         return !(plot.endsWith("kalbar1") && (year === 2022 || year === 2024));
       });
+      if (evidence.data.geometry) setPropertyBoundary(evidence.data.geometry);
+    }
+    if ((!state.draftGeometry) && submission.ok && submission.data && submission.data.geometry) {
+      setPropertyBoundary(submission.data.geometry);
     }
     state.confidence = confidence && confidence.ok ? confidence.data : null;
     state.analysisLoaded = stats.ok && perception.ok;
     state.chips = buildChips(stats.ok ? stats.data : null, perception.ok ? perception.data : null);
     if (state.mapReady && state.showingSubmission) {
+      if (state.draftFeature) setDraft(state.draftFeature);
       applyChips();
       setTime(state.scenes.length - 1);
       showConfidence();
