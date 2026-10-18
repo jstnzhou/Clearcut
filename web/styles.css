@@ -324,8 +324,32 @@ button.ghost:hover {
   backdrop-filter: blur(8px);
 }
 
+#tools .mode-float {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  box-sizing: border-box;
+  border: 1px solid rgba(163, 158, 148, 0.55);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.18s ease;
+  will-change: transform, width, height;
+}
+
+#tools .mode-float.visible {
+  opacity: 1;
+}
+
 #tools .mode-option {
   position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -339,26 +363,10 @@ button.ghost:hover {
   border-radius: 6px;
 }
 
-#tools .mode-option:hover {
-  color: var(--ink);
-  background: transparent;
-}
-
+#tools .mode-option:hover,
 #tools .mode-option.active {
   color: var(--ink);
-}
-
-#tools .mode-indicator {
-  display: none;
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(163, 158, 148, 0.55);
-  border-radius: 6px;
-  pointer-events: none;
-}
-
-#tools .mode-option.active .mode-indicator {
-  display: block;
+  background: transparent;
 }
 
 #tools .mode-icon {

@@ -730,6 +730,45 @@ function eventLngLat(event) {
   return map.unproject([event.clientX - rect.left, event.clientY - rect.top]);
 }
 
+function moveModeFloat(target) {
+  const tools = document.getElementById("tools");
+  const floatEl = document.getElementById("mode-float");
+  if (!tools || !floatEl || !target) return;
+  const toolsRect = tools.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+  const left = rect.left - toolsRect.left;
+  const top = rect.top - toolsRect.top;
+  floatEl.style.width = rect.width + "px";
+  floatEl.style.height = rect.height + "px";
+  floatEl.style.transform = "translate(" + left + "px, " + top + "px)";
+  floatEl.classList.add("visible");
+}
+
+function syncModeFloatToActive() {
+  const active = document.querySelector("#tools .mode-option.active");
+  if (active) moveModeFloat(active);
+}
+
+function bindModeFloatHover() {
+  const tools = document.getElementById("tools");
+  if (!tools || tools.dataset.floatBound === "1") return;
+  tools.dataset.floatBound = "1";
+  tools.querySelectorAll(".mode-option").forEach(function (button) {
+    button.addEventListener("mouseenter", function () {
+      moveModeFloat(button);
+    });
+    button.addEventListener("focus", function () {
+      moveModeFloat(button);
+    });
+  });
+  tools.addEventListener("mouseleave", function () {
+    syncModeFloatToActive();
+  });
+  window.addEventListener("resize", function () {
+    syncModeFloatToActive();
+  });
+}
+
 function setTool(tool) {
   state.tool = tool;
   state.drawMode = tool === "box" || tool === "shape";
@@ -762,6 +801,8 @@ function setTool(tool) {
     const file = document.getElementById("intake-file");
     if (file) file.focus({ preventScroll: true });
   }
+
+  syncModeFloatToActive();
 
   if (!state.mapReady) return;
   if (state.drawMode) map.dragPan.disable();
@@ -1002,10 +1043,16 @@ window.addEventListener("keydown", function (event) {
 });
 }
 
+bindModeFloatHover();
+
 document.getElementById("tool-pan").addEventListener("click", function () { setTool("pan"); });
 document.getElementById("tool-box").addEventListener("click", function () { setTool("box"); });
 document.getElementById("tool-shape").addEventListener("click", function () { setTool("shape"); });
 document.getElementById("tool-upload").addEventListener("click", function () { setTool("upload"); });
+
+requestAnimationFrame(function () {
+  syncModeFloatToActive();
+});
 
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;

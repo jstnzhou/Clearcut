@@ -42,7 +42,9 @@ export function ModeToggle({
   className,
 }: ModeToggleProps) {
   const [uncontrolled, setUncontrolled] = React.useState<IntakeMode>(defaultValue);
+  const [hovered, setHovered] = React.useState<IntakeMode | null>(null);
   const current = value ?? uncontrolled;
+  const highlighted = hovered ?? current;
 
   function select(next: IntakeMode) {
     if (value === undefined) setUncontrolled(next);
@@ -60,6 +62,7 @@ export function ModeToggle({
       )}
       role="radiogroup"
       aria-label="Property intake mode"
+      onMouseLeave={() => setHovered(null)}
     >
       {MODE_OPTIONS.map((option) => (
         <button
@@ -68,20 +71,23 @@ export function ModeToggle({
           title={option.description}
           className={cn(
             "relative flex h-8 min-w-8 cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 transition-all",
-            current === option.value
+            highlighted === option.value
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground",
           )}
           role="radio"
           aria-checked={current === option.value}
           aria-label={option.label}
+          onMouseEnter={() => setHovered(option.value)}
+          onFocus={() => setHovered(option.value)}
+          onBlur={() => setHovered(null)}
           onClick={() => select(option.value)}
         >
-          {current === option.value && (
+          {highlighted === option.value && (
             <motion.div
               layoutId="intake-mode-option"
-              transition={{ type: "spring", bounce: 0.1, duration: 0.75 }}
-              className="border-muted-foreground/50 absolute inset-0 rounded-md border"
+              transition={{ type: "spring", bounce: 0.15, duration: 0.45 }}
+              className="border-muted-foreground/50 absolute inset-0 rounded-md border bg-foreground/5"
             />
           )}
           <option.icon className="relative size-3.5" />
