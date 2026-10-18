@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo · OpenCanopy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/logo/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/logo/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/logo/apple-touch-icon.png">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="demo">
+  <header class="site-bar">
+    <a class="brand" href="index.html"><svg class="mark" viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M8 15 L30 6 L42 18"/><path d="M38 40 L14 42 L8 15"/></g><path d="M42 18 L38 40" stroke="#ec4c2e" stroke-width="2.8" stroke-linecap="round"/><circle cx="24" cy="24" r="7.5" fill="currentColor"/><rect x="22.6" y="29" width="2.8" height="6" fill="currentColor"/><g fill="currentColor"><circle cx="8" cy="15" r="2.8"/><circle cx="30" cy="6" r="2.8"/><circle cx="14" cy="42" r="2.8"/></g><g fill="#ec4c2e"><circle cx="42" cy="18" r="2.8"/><circle cx="38" cy="40" r="2.8"/></g></svg>OpenCanopy</a>
+    <nav>
+      <a href="yes.html">Impact</a>
+      <a href="demo.html" aria-current="page">Demo</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+  <div id="map"></div>
+
+  <aside id="panel">
+    <header>
+      <h1>OpenCanopy</h1>
+      <p class="sub">Check a submitted plot against the forest that was there in 2020.</p>
+      <p id="analyze-note" class="hint"></p>
+    </header>
+
+    <section id="view-submission" hidden>
+      <p class="plot-name">Plot KS-19, a fictional plantation.</p>
+      <p class="coords">Coordinates -0.78, 110.08.</p>
+      <p id="status" hidden></p>
+      <div id="finding"></div>
+      <h2>Selected chip</h2>
+      <p id="chip-empty">Click a chip on the map.</p>
+      <dl id="chip-readout" hidden>
+        <dt>Chip</dt>
+        <dd id="chip-id"></dd>
+        <dt>Model</dt>
+        <dd id="chip-label"></dd>
+        <dt>Trees lost since 2020</dt>
+        <dd id="chip-hansen"></dd>
+        <dt>Forest in 2020</dt>
+        <dd id="chip-jrc"></dd>
+        <dt>Result</dt>
+        <dd id="chip-result"></dd>
+      </dl>
+    </section>
+
+    <section id="view-unknown">
+      <p class="unknown-copy" id="unknown-copy">Draw a box, sketch a shape, or upload a boundary.</p>
+      <button id="analyze" type="button">Analyze this area</button>
+    </section>
+
+    <section id="intake" class="intake">
+      <h2>Property intake</h2>
+      <p class="hint">Three ways in: draw a box, drag any shape, or upload GeoJSON / KML / GPX.</p>
+      <label class="file-button">
+        Choose file
+        <input id="intake-file" type="file" accept=".geojson,.json,.kml,.gpx,application/geo+json,application/json,application/vnd.google-earth.kml+xml">
+      </label>
+      <p id="intake-file-name" class="hint"></p>
+      <label class="stack-label">Paste GeoJSON
+        <textarea id="intake-paste" rows="4" spellcheck="false" placeholder='{"type":"Polygon","coordinates":[[[...]]]}'></textarea>
+      </label>
+      <div class="intake-actions">
+        <button id="intake-paste-btn" type="button">Use pasted GeoJSON</button>
+        <button id="intake-sample" type="button" class="ghost">Load sample plot</button>
+      </div>
+      <p id="intake-note" class="hint"></p>
+      <div id="intake-features" class="intake-features" hidden>
+        <h3>Select a feature</h3>
+        <ul id="intake-feature-list"></ul>
+      </div>
+      <dl id="intake-selected" class="intake-selected" hidden>
+        <dt>Selected</dt>
+        <dd id="intake-selected-name"></dd>
+        <dt>Source</dt>
+        <dd id="intake-selected-source"></dd>
+      </dl>
+    </section>
+
+    <form id="fly-form">
+      <label>Lat
+        <input id="lat" name="lat" type="text" inputmode="decimal" value="-0.78" autocomplete="off">
+      </label>
+      <label>Lon
+        <input id="lon" name="lon" type="text" inputmode="decimal" value="110.08" autocomplete="off">
+      </label>
+      <button type="submit">Go</button>
+    </form>
+    <p id="fly-note" class="hint"></p>
+    <button id="open-board" type="button">Checked plots</button>
+
+    <h2>Legend</h2>
+    <ul class="legend">
+      <li><i class="swatch loss"></i> Red, likely planted</li>
+      <li><i class="swatch forest"></i> Green, not planted</li>
+    </ul>
+  </aside>
+
+  <div id="tools" class="mode-toggle" role="radiogroup" aria-label="Property intake mode">
+    <span id="mode-float" class="mode-float" aria-hidden="true"></span>
+    <button id="tool-box" type="button" class="mode-option active" role="radio" aria-checked="true" aria-label="Draw box" title="Drag a rectangle around the plot">
+      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="4" width="16" height="16" rx="1" stroke-dasharray="3 3"></rect>
+        <path d="M17 17h3v3"></path>
+        <path d="M19.5 19.5 22 22"></path>
+      </svg>
+      <span class="mode-label">Box</span>
+    </button>
+    <button id="tool-shape" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Draw shape" title="Freehand-drag any property boundary">
+      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 6c2-2 5-2 7 0s3 5 1 7-5 3-7 1-3-5-1-7Z"></path>
+        <path d="M14 14c1.5 1 3 3 2.5 5"></path>
+      </svg>
+      <span class="mode-label">Shape</span>
+    </button>
+    <button id="tool-upload" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Upload boundary" title="Upload GeoJSON, KML, or GPX">
+      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V5"></path>
+        <path d="m8 9 4-4 4 4"></path>
+        <path d="M4 19h16"></path>
+      </svg>
+      <span class="mode-label">Upload</span>
+    </button>
+    <button id="tool-pan" type="button" class="mode-option mode-pan" role="radio" aria-checked="false" aria-label="Pan map" title="Pan the map">
+      <span class="mode-label">Pan</span>
+    </button>
+  </div>
+
+  <div id="processing" class="processing" hidden aria-live="polite" aria-busy="false">
+    <div class="processing-bar" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <span id="processing-label">Processing</span>
+      <span class="processing-track" aria-hidden="true"><i></i></span>
+    </div>
+  </div>
+
+  <div id="timebar">
+    <button id="play" type="button">Play</button>
+    <div id="time-stack">
+      <span id="scene-date">Draw a box</span>
+      <input id="time" type="range" min="0" max="1" step="1" value="1" aria-label="Image date">
+      <div id="ticks"></div>
+    </div>
+    <label id="overlay-label">Overlay
+      <input id="overlay" type="range" min="0" max="100" value="55" aria-label="Overlay opacity">
+    </label>
+  </div>
+
+  <dialog id="board-dialog" class="board-dialog">
+    <div class="board-head">
+      <div>
+        <h2>Checked plots</h2>
+        <p id="board-note" class="hint">Percent of each rectangle that is likely a deforested plantation. Highest first.</p>
+      </div>
+      <button id="close-board" type="button">Close</button>
+    </div>
+    <div id="board-list"></div>
+  </dialog>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="intake.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

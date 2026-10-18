@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>KS-19 submitted plot</name>
+    <Placemark>
+      <name>KS-19 submitted plot</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              110.05,-0.75,0
+              110.11,-0.75,0
+              110.11,-0.81,0
+              110.05,-0.81,0
+              110.05,-0.75,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

@@ -1,0 +1,24 @@
+{
+  "change": "In the 2019 image, the landscape is dominated by a continuous expanse of dense green forest cover. A dark, winding river or stream is visible in the upper left portion of the scene, meandering through the unbroken canopy.\n\nBy 2026, a significant transformation has occurred in the lower-left quadrant of the image. The previously uniform forest has been cleared and replaced with a highly organized agricultural area. This new land use is characterized by:\n- Large, rectangular plots arranged in a grid-like pattern.\n- Straight, light-colored access roads that form the boundaries between these plots.\n- Visible linear patterns within some of the plots, consistent with planting rows for crops like oil palm.\n\nThis clear geometric structure is starkly different from the natural, irregular shape of the surrounding forest and the meandering river. The presence of straight roads and blocky fields is definitive evidence of deforestation for commercial plantation agriculture.\n\nTherefore, yes, there is strong evidence that forest was converted to a plantation.",
+  "boxes_raw": "<collection mention=\"converted land\">\n <point_box> (0,417) (1000,866) </point_box>\n <point_box> (805,903) (1000,999) </point_box>\n</collection>",
+  "boxes": [
+    {
+      "label": "",
+      "box": [
+        0,
+        417,
+        1000,
+        866
+      ]
+    },
+    {
+      "label": "",
+      "box": [
+        805,
+        903,
+        1000,
+        999
+      ]
+    }
+  ]
+}

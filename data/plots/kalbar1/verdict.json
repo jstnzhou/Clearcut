@@ -1,0 +1,34 @@
+{
+  "verdict": "CONTRADICTS a no-deforestation-since-2020 declaration",
+  "boxes": [
+    {
+      "label": "",
+      "box": [
+        0,
+        417,
+        1000,
+        866
+      ],
+      "post_cutoff_loss_share": 0.432,
+      "confirmed": true
+    },
+    {
+      "label": "",
+      "box": [
+        805,
+        903,
+        1000,
+        999
+      ],
+      "post_cutoff_loss_share": 0.139,
+      "confirmed": false
+    }
+  ],
+  "plot_post_cutoff_loss_share": 0.1987,
+  "loss_years": {
+    "2021": 0.0001,
+    "2022": 0.0001,
+    "2023": 0.1976,
+    "2024": 0.0009
+  }
+}
