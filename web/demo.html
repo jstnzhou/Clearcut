@@ -17,31 +17,30 @@
   <header class="site-bar">
     <a class="brand" href="index.html"><svg class="mark" viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M8 15 L30 6 L42 18"/><path d="M38 40 L14 42 L8 15"/></g><path d="M42 18 L38 40" stroke="#ec4c2e" stroke-width="2.8" stroke-linecap="round"/><circle cx="24" cy="24" r="7.5" fill="currentColor"/><rect x="22.6" y="29" width="2.8" height="6" fill="currentColor"/><g fill="currentColor"><circle cx="8" cy="15" r="2.8"/><circle cx="30" cy="6" r="2.8"/><circle cx="14" cy="42" r="2.8"/></g><g fill="#ec4c2e"><circle cx="42" cy="18" r="2.8"/><circle cx="38" cy="40" r="2.8"/></g></svg>OpenCanopy</a>
     <nav>
+      <a href="index.html">Home</a>
       <a href="yes.html">Impact</a>
-      <a href="demo.html" aria-current="page">Demo</a>
-      <a href="about.html">About</a>
+      <a href="case.html">Case file</a>
     </nav>
   </header>
   <div id="map"></div>
 
   <aside id="panel">
-    <header>
-      <h1>OpenCanopy</h1>
-      <p class="sub">Check a submitted plot against the forest that was there in 2020.</p>
+    <header class="panel-head">
+      <h1>Check a plot</h1>
+      <p class="sub" id="panel-lead">Compare a boundary with the forest that was there in 2020.</p>
       <p id="analyze-note" class="hint"></p>
     </header>
 
     <section id="view-submission" hidden>
-      <p class="plot-name" id="plot-name">Plot KS-19, a fictional plantation.</p>
-      <p class="coords" id="plot-coords">Coordinates -0.78, 110.08.</p>
+      <p class="plot-name" id="plot-name"></p>
+      <p class="coords" id="plot-coords"></p>
       <p id="status" hidden></p>
       <div id="finding"></div>
-      <h2>Selected chip</h2>
-      <p id="chip-empty">Click a chip on the map.</p>
+      <div id="chip-block" hidden>
       <dl id="chip-readout" hidden>
-        <dt>Chip</dt>
+        <dt>Tile</dt>
         <dd id="chip-id"></dd>
-        <dt>Model</dt>
+        <dt>Perceptron</dt>
         <dd id="chip-label"></dd>
         <dt>Trees lost since 2020</dt>
         <dd id="chip-hansen"></dd>
@@ -50,27 +49,27 @@
         <dt>Result</dt>
         <dd id="chip-result"></dd>
       </dl>
+      </div>
     </section>
 
     <section id="view-unknown">
-      <p class="unknown-copy" id="unknown-copy">Draw a box, sketch a shape, or upload a boundary.</p>
-      <button id="analyze" type="button">Analyze this area</button>
+      <p class="unknown-copy" id="unknown-copy">Drag a box around the plot.</p>
+      <button id="analyze" type="button">Check this plot</button>
     </section>
 
     <section id="intake" class="intake">
-      <h2>Property intake</h2>
-      <p class="hint">Three ways in: draw a box, drag any shape, or upload GeoJSON / KML / GPX.</p>
+      <h2>Or bring a file</h2>
+      <p class="hint">GeoJSON, KML, GPX, or a mill-list PDF. You can also paste a polygon.</p>
       <label class="file-button">
         Choose file
-        <input id="intake-file" type="file" accept=".geojson,.json,.kml,.gpx,application/geo+json,application/json,application/vnd.google-earth.kml+xml">
+        <input id="intake-file" type="file" accept=".geojson,.json,.kml,.gpx,.pdf,application/geo+json,application/json,application/vnd.google-earth.kml+xml,application/pdf">
       </label>
       <p id="intake-file-name" class="hint"></p>
       <label class="stack-label">Paste GeoJSON
         <textarea id="intake-paste" rows="4" spellcheck="false" placeholder='{"type":"Polygon","coordinates":[[[...]]]}'></textarea>
       </label>
       <div class="intake-actions">
-        <button id="intake-paste-btn" type="button">Use pasted GeoJSON</button>
-        <button id="intake-sample" type="button" class="ghost">Load sample plot</button>
+        <button id="intake-paste-btn" type="button">Use this GeoJSON</button>
       </div>
       <p id="intake-note" class="hint"></p>
       <div id="intake-features" class="intake-features" hidden>
@@ -85,17 +84,24 @@
       </dl>
     </section>
 
+    <section id="companies" class="companies">
+      <h2>Companies</h2>
+      <p class="hint">Folders from mill-list PDFs. Rename a company in place. Click a mill to load its outline. The check starts only from Check this plot.</p>
+      <p id="companies-empty" class="hint">No companies yet.</p>
+      <ul id="company-list"></ul>
+    </section>
+
     <form id="fly-form">
-      <label>Lat
+      <label>Latitude
         <input id="lat" name="lat" type="text" inputmode="decimal" value="-0.78" autocomplete="off">
       </label>
-      <label>Lon
+      <label>Longitude
         <input id="lon" name="lon" type="text" inputmode="decimal" value="110.08" autocomplete="off">
       </label>
       <button type="submit">Go</button>
     </form>
     <p id="fly-note" class="hint"></p>
-    <button id="open-board" type="button">Checked plots</button>
+    <button id="open-board" type="button">Checked plots leaderboard</button>
 
     <h2>Legend</h2>
     <ul class="legend">
@@ -121,7 +127,7 @@
       </svg>
       <span class="mode-label">Shape</span>
     </button>
-    <button id="tool-upload" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Upload boundary" title="Upload GeoJSON, KML, or GPX">
+    <button id="tool-upload" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Upload boundary" title="Upload GeoJSON, KML, GPX, or a mill-list PDF">
       <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 16V5"></path>
         <path d="m8 9 4-4 4 4"></path>
@@ -157,7 +163,7 @@
   <dialog id="board-dialog" class="board-dialog">
     <div class="board-head">
       <div>
-        <h2>Checked plots</h2>
+        <h2>Checked plots leaderboard</h2>
         <p id="board-note" class="hint">Percent of each rectangle that is likely a deforested plantation. Highest first.</p>
       </div>
       <button id="close-board" type="button">Close</button>
