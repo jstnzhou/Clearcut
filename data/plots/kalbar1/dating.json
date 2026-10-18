@@ -1,0 +1,16 @@
+{
+  "method": "hansen_annual_loss",
+  "cutoff": "2020-12-31",
+  "first_clearing_year": 2023,
+  "peak_loss_year": 2023,
+  "peak_loss_share": 0.1976,
+  "post_cutoff_loss_share": 0.1987,
+  "by_year": {
+    "2021": 0.0001,
+    "2022": 0.0001,
+    "2023": 0.1976,
+    "2024": 0.0009
+  },
+  "note": "Hansen first shows meaningful post-cutoff loss in 2023 (after the EUDR cutoff of 31 Dec 2020). Peak annual loss is 2023 (19.8% of the plot). Later Sentinel frames show current land use; they are not 2025\u201326 Hansen detections.",
+  "relative_to_cutoff": "after"
+}

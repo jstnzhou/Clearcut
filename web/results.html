@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clearcut — Results</title>
+  <link rel="stylesheet" href="results.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <a class="wordmark" href="/web/">Clearcut</a>
+      <p class="eyebrow">Evidence pack</p>
+    </div>
+    <nav class="actions" aria-label="Pack actions">
+      <button type="button" id="copy-link">Copy share link</button>
+      <button type="button" id="download-json">Export JSON</button>
+      <button type="button" id="download-pdf">Download PDF</button>
+      <a class="ghost" id="back-map" href="/web/">Map</a>
+    </nav>
+  </header>
+
+  <main id="app" hidden>
+    <section class="verdict-band" id="verdict-band">
+      <p class="plot-label" id="plot-label"></p>
+      <h1 id="verdict-summary"></h1>
+      <p class="disclaimer" id="verdict-disclaimer"></p>
+    </section>
+
+    <section class="hero" aria-label="Before and after">
+      <div class="hero-head">
+        <h2>Before / after</h2>
+        <label class="toggle">
+          <input type="checkbox" id="peak-toggle">
+          <span>Show peak-loss year between start and end</span>
+        </label>
+      </div>
+
+      <div class="slider" id="slider">
+        <img id="slide-after" alt="Later satellite scene">
+        <div class="slider-before" id="slide-before-wrap">
+          <img id="slide-before" alt="Earlier satellite scene">
+        </div>
+        <div class="slider-handle" id="slide-handle" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-label="Compare earlier and later scenes">
+          <span></span>
+        </div>
+        <div class="slider-labels">
+          <span id="label-left"></span>
+          <span id="label-right"></span>
+        </div>
+      </div>
+
+      <div class="peak-card" id="peak-card" hidden>
+        <img id="peak-img" alt="Peak loss year scene">
+        <div>
+          <h3 id="peak-title">Peak loss</h3>
+          <p id="peak-copy"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="dating" aria-label="When clearing happened">
+      <div class="section-head">
+        <h2>When was it cleared?</h2>
+        <p id="dating-note"></p>
+      </div>
+
+      <div class="dating-grid">
+        <div class="film" id="film">
+          <img id="film-frame" alt="Yearly satellite frame">
+          <div class="film-meta">
+            <button type="button" id="film-play">Play years</button>
+            <span id="film-date"></span>
+          </div>
+        </div>
+        <div>
+          <ol class="dating-facts" id="dating-facts"></ol>
+          <div class="year-rail" id="year-rail" aria-label="Loss by year"></div>
+          <video id="timelapse" class="timelapse" controls playsinline hidden></video>
+        </div>
+      </div>
+    </section>
+
+    <section class="perception" aria-label="What replaced the forest">
+      <h2>What replaced the forest</h2>
+      <p class="ai-label">AI interpretation · Perceptron</p>
+      <p id="perception-copy"></p>
+      <ul class="box-list" id="box-list"></ul>
+    </section>
+
+    <section class="method">
+      <h2>Methodology</h2>
+      <dl id="method-list"></dl>
+      <p class="footer-note">Screening tool based on public satellite data. Not a legal certification.</p>
+    </section>
+  </main>
+
+  <p id="error" class="error" hidden></p>
+
+  <!-- Print-only PDF body (cloned content) -->
+  <article id="print-root" class="print-root" aria-hidden="true"></article>
+
+  <script src="results.js"></script>
+</body>
+</html>

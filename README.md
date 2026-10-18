@@ -48,3 +48,16 @@ The check for that plot is produced by three steps:
 - `pipeline/verify.py` cross-checks each region against post-2020 Hansen loss and writes a confirmed or inconclusive result.
 
 Precomputed inputs and outputs for the West Kalimantan plot live in `data/plots/kalbar1`.
+
+## Evidence pack (results page)
+
+Shareable results for a plot (before/after slider, peak-loss year, clearing date, Perceptron copy, JSON + PDF):
+
+```bash
+.venv/bin/python web/server.py
+# Map:     http://127.0.0.1:8765/web/
+# Results: http://127.0.0.1:8765/web/results.html?plot=kalbar1
+# JSON:    http://127.0.0.1:8765/api/audit/kalbar1/export
+```
+
+`pipeline/build_audit.py` assembles the pack from existing plot files (Hansen dates the clearing peak; no GFW API).
