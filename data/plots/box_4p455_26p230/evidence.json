@@ -1,0 +1,102 @@
+{
+  "lat": 4.4545600858533305,
+  "lon": 26.229931409556855,
+  "bbox": [
+    26.179742058367083,
+    4.410295934439802,
+    26.280120760746627,
+    4.498824237266859
+  ],
+  "hansen": {
+    "loss_share_by_year": {
+      "2001": 0.0008,
+      "2002": 0.0001,
+      "2003": 0.0003,
+      "2005": 0.0,
+      "2009": 0.0001,
+      "2011": 0.0,
+      "2012": 0.0002,
+      "2013": 0.0,
+      "2024": 0.0
+    },
+    "loss_share_post_cutoff": 0.0
+  },
+  "scenes": [
+    {
+      "date": "2019-01-09",
+      "scene_id": "S2B_MSIL2A_20190109T083329_R021_T35NME_20201008T001054",
+      "cloud_cover": 0.00193,
+      "ndvi_mean": 0.319,
+      "year": 2019,
+      "file": "scene_2019.png"
+    },
+    {
+      "date": "2020-02-03",
+      "scene_id": "S2B_MSIL2A_20200203T083049_R021_T35NME_20200930T164218",
+      "cloud_cover": 0.000455,
+      "ndvi_mean": 0.273,
+      "year": 2020,
+      "file": "scene_2020.png"
+    },
+    {
+      "date": "2021-01-13",
+      "scene_id": "S2A_MSIL2A_20210113T083321_R021_T35NME_20210115T004103",
+      "cloud_cover": 0.011281,
+      "ndvi_mean": 0.233,
+      "year": 2021,
+      "file": "scene_2021.png"
+    },
+    {
+      "date": "2022-02-27",
+      "scene_id": "S2A_MSIL2A_20220227T082911_R021_T35NME_20220302T203628",
+      "cloud_cover": 2.537622,
+      "ndvi_mean": 0.323,
+      "year": 2022,
+      "file": "scene_2022.png"
+    },
+    {
+      "date": "2023-12-14",
+      "scene_id": "S2B_MSIL2A_20231214T083249_R021_T35NME_20231214T150730",
+      "cloud_cover": 0.001555,
+      "ndvi_mean": 0.568,
+      "year": 2023,
+      "file": "scene_2023.png"
+    },
+    {
+      "date": "2024-05-07",
+      "scene_id": "S2A_MSIL2A_20240507T082601_R021_T35NME_20240507T141335",
+      "cloud_cover": 1.3e-05,
+      "ndvi_mean": 0.723,
+      "year": 2024,
+      "file": "scene_2024.png"
+    },
+    {
+      "date": "2025-11-18",
+      "scene_id": "S2C_MSIL2A_20251118T084551_R021_T35NME_20251118T120109",
+      "cloud_cover": 7e-06,
+      "ndvi_mean": 0.636,
+      "year": 2025,
+      "file": "scene_2025.png"
+    },
+    {
+      "date": "2026-02-26",
+      "scene_id": "S2C_MSIL2A_20260226T082921_R021_T35NME_20260226T142713",
+      "cloud_cover": 0.008401,
+      "ndvi_mean": 0.425,
+      "year": 2026,
+      "file": "scene_2026.png"
+    }
+  ],
+  "before": {
+    "date": "2019-01-09",
+    "scene_id": "S2B_MSIL2A_20190109T083329_R021_T35NME_20201008T001054",
+    "cloud_cover": 0.00193,
+    "ndvi_mean": 0.319
+  },
+  "after": {
+    "date": "2026-02-26",
+    "scene_id": "S2C_MSIL2A_20260226T082921_R021_T35NME_20260226T142713",
+    "cloud_cover": 0.008401,
+    "ndvi_mean": 0.425
+  }
+}

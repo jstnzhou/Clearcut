@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clearcut</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="map"></div>
+
+  <aside id="panel">
+    <header>
+      <h1>Clearcut</h1>
+      <p class="tagline">For social good.</p>
+      <p class="sub">An official check on a plantation submission. The government approves. Clearcut shows the record.</p>
+    </header>
+
+    <section id="view-submission">
+      <p class="plot-name">Plot KS-19, a fictional plantation.</p>
+      <p class="coords">Coordinates -0.78, 110.08.</p>
+      <p id="status" hidden></p>
+      <div id="finding"></div>
+      <h2>Selected chip</h2>
+      <p id="chip-empty">Click a chip on the map.</p>
+      <dl id="chip-readout" hidden>
+        <dt>Chip</dt>
+        <dd id="chip-id"></dd>
+        <dt>Perceptron</dt>
+        <dd id="chip-label"></dd>
+        <dt>Hansen loss share</dt>
+        <dd id="chip-hansen"></dd>
+        <dt>JRC forest share</dt>
+        <dd id="chip-jrc"></dd>
+        <dt>Result</dt>
+        <dd id="chip-result"></dd>
+      </dl>
+    </section>
+
+    <section id="view-unknown" hidden>
+      <p class="unknown-copy">This rectangle is drawn. Analyze downloads a satellite scene for each year from 2019 through 2026, then Perceptron compares the first and the last.</p>
+      <button id="analyze" type="button">Analyze this area</button>
+      <p id="analyze-note" class="hint"></p>
+      <button id="show-kalbar" type="button">Show the Kalimantan submission</button>
+    </section>
+
+    <h2>Fly to</h2>
+    <form id="fly-form">
+      <label>Lat
+        <input id="lat" name="lat" type="number" step="any" value="-0.78" inputmode="decimal">
+      </label>
+      <label>Lon
+        <input id="lon" name="lon" type="number" step="any" value="110.08" inputmode="decimal">
+      </label>
+      <button type="submit">Go</button>
+    </form>
+    <p id="fly-note" class="hint"></p>
+    <p class="hint">Draw a rectangle, then choose Analyze this area.</p>
+
+    <h2>Legend</h2>
+    <ul class="legend">
+      <li><i class="swatch conv"></i> Confirmed conversion</li>
+      <li><i class="swatch forest"></i> Still forest</li>
+      <li><i class="swatch old"></i> Old plantation</li>
+      <li><i class="swatch inc"></i> Inconclusive</li>
+    </ul>
+  </aside>
+
+  <div id="tools">
+    <button id="tool-pan" type="button">Pan</button>
+    <button id="tool-box" type="button" class="active">Draw box</button>
+  </div>
+
+  <div id="timebar">
+    <span id="scene-date">8 Aug 2026</span>
+    <input id="time" type="range" min="0" max="1" step="1" value="1" aria-label="Image date">
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

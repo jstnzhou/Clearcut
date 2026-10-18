@@ -1,0 +1,268 @@
+:root {
+  --panel: 340px;
+  --timebar: 72px;
+  --ink: #eceae4;
+  --muted: #a39e94;
+  --line: rgba(255, 255, 255, 0.12);
+  --bg: rgba(14, 16, 18, 0.92);
+  --conv: #c0392b;
+  --forest: #1e8449;
+  --old: #b7950b;
+  --inc: #7f8c8d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #101214;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+}
+
+#panel {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--panel);
+  padding: 22px 20px calc(var(--timebar) + 16px);
+  overflow: auto;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+}
+
+h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 2px 0 12px;
+  font-size: 15px;
+}
+
+.sub,
+.hint,
+.coords,
+.disclaimer,
+.loss-note {
+  color: var(--muted);
+}
+
+.sub {
+  margin: 0 0 18px;
+  font-size: 14px;
+}
+
+.plot-name,
+.coords,
+.unknown-copy,
+.verdict,
+.loss-note,
+.disclaimer,
+.hint {
+  margin: 0 0 8px;
+}
+
+.plot-name {
+  font-weight: 600;
+}
+
+.verdict {
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+#status {
+  margin: 10px 0;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  font-size: 14px;
+}
+
+h2 {
+  margin: 22px 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a958c;
+}
+
+#fly-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+#fly-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+input[type="number"] {
+  width: 108px;
+  padding: 7px 8px;
+  color-scheme: dark;
+  background: #1c2024;
+  border: 1px solid var(--line);
+}
+
+button {
+  padding: 8px 12px;
+  background: #eceae4;
+  color: #16181b;
+  border: 0;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #ffffff;
+}
+
+#show-kalbar,
+#analyze {
+  margin-top: 8px;
+}
+
+.legend,
+.counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legend li,
+.counts li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.counts {
+  margin-top: 8px;
+}
+
+.counts b {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.swatch.conv { background: var(--conv); }
+.swatch.forest { background: var(--forest); }
+.swatch.old { background: var(--old); }
+.swatch.inc { background: var(--inc); }
+
+#chip-readout {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 4px 10px;
+  margin: 0;
+}
+
+#chip-readout dt {
+  color: var(--muted);
+}
+
+#chip-readout dd {
+  margin: 0;
+}
+
+#tools {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  display: flex;
+}
+
+#tools button {
+  background: rgba(14, 16, 18, 0.92);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+#tools button + button {
+  border-left: 0;
+}
+
+#tools button.active {
+  background: #eceae4;
+  color: #16181b;
+}
+
+#timebar {
+  position: absolute;
+  z-index: 2;
+  left: var(--panel);
+  right: 0;
+  bottom: 0;
+  height: var(--timebar);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px 10px;
+  background: rgba(14, 16, 18, 0.92);
+  border-top: 1px solid var(--line);
+}
+
+#scene-date {
+  min-width: 118px;
+  font-weight: 600;
+}
+
+input[type="range"] {
+  flex: 1;
+  accent-color: #eceae4;
+}
+
+.maplibregl-ctrl-bottom-right {
+  bottom: calc(var(--timebar) + 8px);
+  right: 8px;
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgba(14, 16, 18, 0.8);
+  color: #c8c4ba;
+  font-size: 11px;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: #eceae4;
+}

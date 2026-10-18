@@ -1,0 +1,35 @@
+{
+  "model": "perceptron-mk1.5",
+  "reasoning_effort": "high",
+  "chips": [
+    {
+      "id": 0,
+      "label": "unclear",
+      "box": null,
+      "raw": "unclear"
+    },
+    {
+      "id": 1,
+      "label": "forest_unchanged",
+      "box": null,
+      "raw": "forest_unchanged"
+    },
+    {
+      "id": 2,
+      "label": "converted_to_plantation",
+      "box": null,
+      "raw": "converted_to_plantation"
+    },
+    {
+      "id": 3,
+      "label": "converted_to_plantation",
+      "box": [
+        0,
+        250,
+        1000,
+        1000
+      ],
+      "raw": "converted_to_plantation\n<point_box mention=\"converted area with roads and rectangular blocks\" asset_idx=\"1\"> (0,250) (1000,1000) </point_box>"
+    }
+  ]
+}

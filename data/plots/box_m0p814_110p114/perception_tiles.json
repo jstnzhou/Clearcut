@@ -1,0 +1,50 @@
+{
+  "model": "perceptron-mk1.5",
+  "reasoning_effort": "high",
+  "chips": [
+    {
+      "id": 0,
+      "label": "converted_to_plantation",
+      "box": [
+        0,
+        300,
+        450,
+        750
+      ],
+      "raw": "converted_to_plantation\n<point_box mention=\"converted_to_plantation\" asset_idx=\"1\"> (0,300) (450,750) </point_box>"
+    },
+    {
+      "id": 1,
+      "label": "converted_to_plantation",
+      "box": [
+        0,
+        0,
+        1000,
+        1000
+      ],
+      "raw": "converted_to_plantation\n<point_box mention=\"converted_to_plantation\" asset_idx=\"1\"> (0,0) (1000,1000) </point_box>"
+    },
+    {
+      "id": 2,
+      "label": "converted_to_plantation",
+      "box": [
+        600,
+        0,
+        1000,
+        1000
+      ],
+      "raw": "converted_to_plantation\n<point_box mention=\"converted_to_plantation\" asset_idx=\"1\"> (600,0) (1000,1000) </point_box>"
+    },
+    {
+      "id": 3,
+      "label": "converted_to_plantation",
+      "box": [
+        0,
+        0,
+        1000,
+        1000
+      ],
+      "raw": "converted_to_plantation\n<point_box mention=\"converted_to_plantation\" asset_idx=\"1\"> (0,0) (1000,1000) </point_box>"
+    }
+  ]
+}
