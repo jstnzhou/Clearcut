@@ -1,4 +1,4 @@
-"""Fast rectangle check: parallel yearly RGB, one video per tile, high-reasoning calls together.
+"""Fast rectangle check: gate on forest loss, then one 10.8 km video per cleared slice.
 
 Usage:
     python pipeline/analyze_fast.py --bbox minLon,minLat,maxLon,maxLat --out data/plots/name
@@ -25,7 +25,7 @@ import rasterio
 from PIL import Image, ImageFilter
 from perceptron import Client, video
 from rasterio.enums import Resampling
-from rasterio.transform import from_bounds
+from rasterio.transform import Affine, from_bounds
 from rasterio.warp import reproject, transform_bounds
 from shapely.geometry import box, shape
 
@@ -33,7 +33,7 @@ STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
 KEY_FILE = os.path.expanduser("~/Desktop/perceptron-key.txt")
 YEARS = range(2020, 2027)
 PROMPT = (
-    "This video is one frame per year of the same land, from 2020 onward, in order, about one frame per second. "
+    "This video is one frame per year of the same land, from 2020 onward, in order, at 2 frames per second. "
     "Reply with one number from 0.0 to 1.0 and nothing else. "
     "The number is your confidence that forest in the early frames was converted to plantation by the later frames: "
     "rectangular blocks, straight access roads, or planting rows. "
@@ -118,7 +118,15 @@ def clip_bounds(src, bbox):
     return west, south, east, north
 
 
-def read_band(item, name, bbox):
+def fit_size(width, height, max_px):
+    width, height = max(2, int(width)), max(2, int(height))
+    if not max_px or max(width, height) <= max_px:
+        return width, height
+    scale = max_px / max(width, height)
+    return max(2, int(round(width * scale))), max(2, int(round(height * scale)))
+
+
+def read_band(item, name, bbox, max_px=None):
     with rasterio.open(item.assets[name].href) as src:
         bounds = clip_bounds(src, bbox)
         if bounds is None:
@@ -126,29 +134,34 @@ def read_band(item, name, bbox):
         window = rasterio.windows.from_bounds(*bounds, transform=src.transform).round_offsets().round_lengths()
         if window.width <= 0 or window.height <= 0:
             return None
-        values = src.read(1, window=window, boundless=True, fill_value=0).astype(np.float32)
+        width, height = fit_size(window.width, window.height, max_px)
+        values = src.read(
+            1, window=window, out_shape=(height, width),
+            resampling=Resampling.bilinear, boundless=True, fill_value=0,
+        ).astype(np.float32)
         offset = 1000 if float(item.properties.get("s2:processing_baseline", "0")) >= 4.0 else 0
         values = np.clip(values - offset, 0, None) / 10000
-        return values, src.window_transform(window), src.crs
+        transform = src.window_transform(window) * Affine.scale(window.width / width, window.height / height)
+        return values, transform, src.crs
 
 
-def mosaic_size(bbox):
+def mosaic_size(bbox, max_px=None):
     min_lon, min_lat, max_lon, max_lat = bbox
     mid = math.radians((min_lat + max_lat) / 2)
     width = max(2, int(round((max_lon - min_lon) * 111320 * math.cos(mid) / 10)))
     height = max(2, int(round((max_lat - min_lat) * 110540 / 10)))
-    return width, height
+    return fit_size(width, height, max_px)
 
 
-def read_mosaic(items, bbox):
-    width, height = mosaic_size(bbox)
+def read_mosaic(items, bbox, max_px=None):
+    width, height = mosaic_size(bbox, max_px)
     dst_transform = from_bounds(*bbox, width, height)
     canvas = np.zeros((height, width, 3), np.float32)
     filled = np.zeros((height, width), bool)
     for item in sorted(items, key=lambda scene: scene.properties["eo:cloud_cover"]):
         layers = []
         for name in ("B04", "B03", "B02"):
-            band = read_band(item, name, bbox)
+            band = read_band(item, name, bbox, max_px)
             if band is None:
                 layers = None
                 break
@@ -176,35 +189,39 @@ def read_mosaic(items, bbox):
     return np.clip(canvas / 0.15 * 255, 0, 255).astype(np.uint8)
 
 
-def read_rgb(item, bbox):
+def read_rgb(item, bbox, max_px=None):
     bands = []
     for name in ("B04", "B03", "B02"):
         with rasterio.open(item.assets[name].href) as src:
             window = transform_bounds("EPSG:4326", src.crs, *bbox)
-            values = src.read(1, window=rasterio.windows.from_bounds(*window, transform=src.transform)).astype(float)
+            window = rasterio.windows.from_bounds(*window, transform=src.transform)
+            width, height = fit_size(window.width, window.height, max_px)
+            values = src.read(
+                1, window=window, out_shape=(height, width), resampling=Resampling.bilinear,
+            ).astype(float)
         offset = 1000 if float(item.properties.get("s2:processing_baseline", "0")) >= 4.0 else 0
         bands.append(np.clip(values - offset, 0, None) / 10000)
     return np.clip(np.stack(bands, -1) / 0.15 * 255, 0, 255).astype(np.uint8)
 
 
-def fetch_year(bbox, year, out):
+def load_rgb(items, bbox, max_px=None):
+    if len(items) == 1:
+        return read_rgb(items[0], bbox, max_px)
+    return read_mosaic(items, bbox, max_px)
+
+
+def year_record(bbox, year):
     try:
         items = covering_items(bbox, year)
-        if not items:
-            print(f"{year} no covering scene", flush=True)
-            return None
-        if len(items) == 1:
-            rgb = read_rgb(items[0], bbox)
-        else:
-            print(f"{year} stitching {len(items)} tiles", flush=True)
-            rgb = read_mosaic(items, bbox)
-        if rgb is None:
-            print(f"{year} empty image", flush=True)
-            return None
     except Exception as exc:
         print(f"{year} skipped: {exc}", flush=True)
         return None
+    if not items:
+        print(f"{year} no covering scene", flush=True)
+        return None
     item = min(items, key=lambda scene: scene.properties["eo:cloud_cover"])
+    if len(items) > 1:
+        print(f"{year} stitching {len(items)} tiles", flush=True)
     stats = {
         "date": str(item.datetime.date()),
         "scene_id": item.id,
@@ -212,6 +229,22 @@ def fetch_year(bbox, year, out):
         "year": year,
         "file": f"scene_{year}.png",
     }
+    return items, stats
+
+
+def fetch_year(bbox, year, out):
+    record = year_record(bbox, year)
+    if record is None:
+        return None
+    items, stats = record
+    try:
+        rgb = load_rgb(items, bbox)
+    except Exception as exc:
+        print(f"{year} skipped: {exc}", flush=True)
+        return None
+    if rgb is None:
+        print(f"{year} empty image", flush=True)
+        return None
     return rgb, stats
 
 
@@ -236,7 +269,7 @@ def make_video(frames, path):
     subprocess.run(
         [
             ffmpeg_exe(), "-y", "-hide_banner", "-loglevel", "error",
-            "-framerate", "1", "-i", os.path.join(folder, "%02d.png"),
+            "-framerate", "2", "-i", os.path.join(folder, "%02d.png"),
             "-c:v", "libx264", "-pix_fmt", "yuv420p", path,
         ],
         check=True,
@@ -286,25 +319,79 @@ def keep_season(scenes):
     return kept if len(kept) >= 2 else scenes
 
 
-def tiles(width, height, target=250, max_tiles=16):
-    cols = max(1, math.ceil(width / target))
-    rows = max(1, math.ceil(height / target))
-    while cols * rows > max_tiles:
-        if cols >= rows and cols > 1:
-            cols -= 1
-        elif rows > 1:
-            rows -= 1
-        else:
-            break
+SLICE_KM = 10.8
+OVERVIEW_PX = 1000
+FOREST_MIN = 0.5
+LOSS_MIN = 0.08
+
+
+def tiles(width, height, bbox, slice_km=SLICE_KM):
+    """Cut the rectangle into slices of a fixed ground size. A larger box adds slices."""
+    min_lon, min_lat, max_lon, max_lat = bbox
+    mid = math.radians((min_lat + max_lat) / 2)
+    km_x = max((max_lon - min_lon) * 111.32 * math.cos(mid), 0.001)
+    km_y = max((max_lat - min_lat) * 110.54, 0.001)
+    step_x = max(1, int(round(slice_km * width / km_x)))
+    step_y = max(1, int(round(slice_km * height / km_y)))
+    cols = math.ceil(width / step_x)
+    rows = math.ceil(height / step_y)
     boxes = []
     for row in range(rows):
         for col in range(cols):
-            left = col * width // cols
-            right = (col + 1) * width // cols
-            top = row * height // rows
-            bottom = (row + 1) * height // rows
+            left = min(width - 1, col * step_x)
+            top = min(height - 1, row * step_y)
+            right = min(width, left + step_x)
+            bottom = min(height, top + step_y)
+            if right - left < 2 or bottom - top < 2:
+                continue
             boxes.append((left, top, right, bottom, row, col))
     return rows, cols, boxes
+
+
+def ground_slices(bbox, slice_km=SLICE_KM):
+    """Geographic slices of a fixed size. Row 0 is the north edge."""
+    min_lon, min_lat, max_lon, max_lat = bbox
+    mid = math.radians((min_lat + max_lat) / 2)
+    step_lon = slice_km / max(111.32 * math.cos(mid), 0.001)
+    step_lat = slice_km / 110.54
+    slices = []
+    row = 0
+    north = max_lat
+    while north > min_lat + 1e-8:
+        south = max(min_lat, north - step_lat)
+        col = 0
+        west = min_lon
+        while west < max_lon - 1e-8:
+            east = min(max_lon, west + step_lon)
+            slices.append({"row": row, "col": col, "bbox": [west, south, east, north]})
+            west = east
+            col += 1
+        north = south
+        row += 1
+    return slices
+
+
+def pixel_window(slice_bbox, full_bbox, width, height):
+    min_lon, min_lat, max_lon, max_lat = full_bbox
+    lon_span = max(max_lon - min_lon, 1e-9)
+    lat_span = max(max_lat - min_lat, 1e-9)
+    left = int(math.floor((slice_bbox[0] - min_lon) / lon_span * width))
+    right = int(math.ceil((slice_bbox[2] - min_lon) / lon_span * width))
+    top = int(math.floor((max_lat - slice_bbox[3]) / lat_span * height))
+    bottom = int(math.ceil((max_lat - slice_bbox[1]) / lat_span * height))
+    left = min(max(left, 0), width - 1)
+    top = min(max(top, 0), height - 1)
+    right = min(max(right, left + 1), width)
+    bottom = min(max(bottom, top + 1), height)
+    return left, top, right, bottom
+
+
+def slice_share(mask, full_bbox, slice_bbox):
+    if mask is None:
+        return 1.0
+    left, top, right, bottom = pixel_window(slice_bbox, full_bbox, mask.shape[1], mask.shape[0])
+    piece = mask[top:bottom, left:right]
+    return float(piece.mean()) if piece.size else 0.0
 
 
 def ring(pixel_box, size, bbox):
@@ -413,70 +500,149 @@ def main():
     args = parser.parse_args()
     bbox = [float(v) for v in args.bbox.split(",")]
     os.makedirs(args.out, exist_ok=True)
-    started = time.perf_counter()
-
-    with ThreadPoolExecutor(max_workers=len(list(YEARS))) as pool:
-        fetched = list(pool.map(lambda year: fetch_year(bbox, year, args.out), YEARS))
-    scenes = keep_season([row for row in fetched if row is not None])
-    if len(scenes) < 2:
-        raise SystemExit("fewer than two years had a clear view of this rectangle")
-    target = scenes[0][0].shape[:2]
-    frames = []
-    meta = []
-    for rgb, stats in scenes:
-        if rgb.shape[:2] != target:
-            rgb = np.array(Image.fromarray(rgb).resize((target[1], target[0]), Image.Resampling.BILINEAR))
-        Image.fromarray(rgb).save(os.path.join(args.out, stats["file"]))
-        frames.append(Image.fromarray(rgb))
-        meta.append(stats)
-    fetch_s = round(time.perf_counter() - started, 2)
-    print(f"fetched {len(frames)} years in {fetch_s}s", flush=True)
-
-    height, width = target
-    _, _, boxes = tiles(width, height)
     use_perceptron = args.perceptron_only or not args.no_perceptron
     want_forest = not args.no_forest and not args.perceptron_only
     want_loss = not args.no_loss and not args.perceptron_only
     if not use_perceptron and not want_forest and not want_loss:
         raise SystemExit("Turn on Perceptron, the 2020 forest map, or the loss map.")
-    mask_future = None
-    mask_pool = None
-    if want_forest or want_loss:
-        mask_pool = ThreadPoolExecutor(max_workers=1)
-        mask_future = mask_pool.submit(read_masks, bbox, want_forest, want_loss)
-    windows = []
-    model_s = 0.0
-    if use_perceptron:
-        video_dir = os.path.join(args.out, "videos")
-        os.makedirs(video_dir, exist_ok=True)
+    started = time.perf_counter()
+    pool = ThreadPoolExecutor(max_workers=len(list(YEARS)) + 1)
+    mask_future = pool.submit(read_masks, bbox, want_forest, want_loss) if (want_forest or want_loss) else None
+    record_futures = [pool.submit(year_record, bbox, year) for year in YEARS]
+    records = [future.result() for future in record_futures]
+    kept = keep_season([row for row in records if row is not None])
+    if len(kept) < 2:
+        pool.shutdown(wait=False)
+        raise SystemExit("fewer than two years had a clear view of this rectangle")
 
-        def one(i, box):
-            left, top, right, bottom, row, col = box
-            crops = [frame.crop((left, top, right, bottom)) for frame in frames]
-            path = os.path.join(video_dir, f"tile_{i}.mp4")
-            make_video(crops, path)
-            score, raw, seconds = ask_video(path)
-            print(json.dumps({"tile": i, "score": score, "seconds": seconds}), flush=True)
-            return {
-                "id": i,
-                "row": row,
-                "col": col,
-                "score": score,
-                "seconds": seconds,
-                "box": [left, top, right, bottom],
-                "polygon": ring((left, top, right, bottom), (width, height), bbox),
-                "raw": raw,
-            }
+    def read_overview(record):
+        items, stats = record
+        try:
+            rgb = load_rgb(items, bbox, OVERVIEW_PX)
+        except Exception as exc:
+            print(f"{stats['year']} overview skipped: {exc}", flush=True)
+            return None
+        if rgb is None:
+            print(f"{stats['year']} empty overview", flush=True)
+            return None
+        return rgb, stats
 
-        model_started = time.perf_counter()
-        with ThreadPoolExecutor(max_workers=len(boxes)) as pool:
-            windows = list(pool.map(lambda pair: one(*pair), list(enumerate(boxes))))
-        model_s = round(time.perf_counter() - model_started, 2)
+    overview_futures = [pool.submit(read_overview, record) for record in kept]
     if mask_future is None:
         loss_mask, forest_mask, mask_error = None, None, None
     else:
         loss_mask, forest_mask, mask_error = mask_future.result()
-        mask_pool.shutdown(wait=False)
+    overview = [row for row in (future.result() for future in overview_futures) if row is not None]
+    pool.shutdown(wait=False)
+    if len(overview) < 2:
+        raise SystemExit("fewer than two years had a clear view of this rectangle")
+    target = overview[0][0].shape[:2]
+    frames = []
+    meta = []
+    for rgb, stats in overview:
+        if rgb.shape[:2] != target:
+            rgb = np.array(Image.fromarray(rgb).resize((target[1], target[0]), Image.Resampling.BILINEAR))
+        Image.fromarray(rgb).save(os.path.join(args.out, stats["file"]))
+        frames.append(Image.fromarray(rgb))
+        meta.append(stats)
+    height, width = target
+    native_w, native_h = mosaic_size(bbox)
+    overview_is_native = width >= native_w - 2 and height >= native_h - 2
+
+    slices = ground_slices(bbox)
+    gate = want_forest or want_loss
+    for sl in slices:
+        sl["forest_share"] = round(slice_share(forest_mask, bbox, sl["bbox"]), 3) if gate else None
+        sl["loss_share"] = round(slice_share(loss_mask, bbox, sl["bbox"]), 3) if gate else None
+        sl["eligible"] = (not gate) or (sl["forest_share"] >= FOREST_MIN and sl["loss_share"] >= LOSS_MIN)
+    chosen = [sl for sl in slices if sl["eligible"]]
+    print(f"slices {len(slices)} eligible {len(chosen)}", flush=True)
+
+    def native_frames(sl):
+        if overview_is_native:
+            left, top, right, bottom = pixel_window(sl["bbox"], bbox, width, height)
+            return [frame.crop((left, top, right, bottom)) for frame in frames]
+
+        def one(record):
+            items, stats = record
+            try:
+                return load_rgb(items, sl["bbox"])
+            except Exception as exc:
+                print(f"{stats['year']} slice skipped: {exc}", flush=True)
+                return None
+
+        with ThreadPoolExecutor(max_workers=len(kept)) as workers:
+            rgbs = list(workers.map(one, kept))
+        images = []
+        for rgb in rgbs:
+            if rgb is None:
+                continue
+            image = Image.fromarray(rgb)
+            if images and image.size != images[0].size:
+                image = image.resize(images[0].size, Image.Resampling.BILINEAR)
+            images.append(image)
+        return images
+
+    downloaded = {}
+    if use_perceptron and chosen:
+        with ThreadPoolExecutor(max_workers=min(8, len(chosen))) as workers:
+            downloaded = dict(zip(
+                [id(sl) for sl in chosen],
+                workers.map(native_frames, chosen),
+            ))
+    fetch_s = round(time.perf_counter() - started, 2)
+    print(f"fetched {len(frames)} years in {fetch_s}s", flush=True)
+
+    windows = []
+    model_s = 0.0
+    if use_perceptron and chosen:
+        video_dir = os.path.join(args.out, "videos")
+        os.makedirs(video_dir, exist_ok=True)
+
+        def one(i, sl):
+            crops = downloaded.get(id(sl)) or []
+            score, raw, seconds = None, "", 0.0
+            if len(crops) >= 2:
+                path = os.path.join(video_dir, f"tile_{i}.mp4")
+                make_video(crops, path)
+                score, raw, seconds = ask_video(path)
+            print(json.dumps({"tile": i, "score": score, "seconds": seconds, "eligible": True}), flush=True)
+            box = pixel_window(sl["bbox"], bbox, width, height)
+            return {
+                "id": i,
+                "row": sl["row"],
+                "col": sl["col"],
+                "score": score,
+                "seconds": seconds,
+                "box": list(box),
+                "polygon": ring(box, (width, height), bbox),
+                "raw": raw,
+                "loss_share": sl["loss_share"],
+                "forest_share": sl["forest_share"],
+                "eligible": True,
+            }
+
+        model_started = time.perf_counter()
+        with ThreadPoolExecutor(max_workers=len(chosen)) as pool:
+            windows = list(pool.map(lambda pair: one(*pair), list(enumerate(chosen))))
+        model_s = round(time.perf_counter() - model_started, 2)
+    for sl in slices:
+        if sl["eligible"]:
+            continue
+        box = pixel_window(sl["bbox"], bbox, width, height)
+        windows.append({
+            "id": len(windows),
+            "row": sl["row"],
+            "col": sl["col"],
+            "score": 0.0,
+            "seconds": 0,
+            "box": list(box),
+            "polygon": ring(box, (width, height), bbox),
+            "raw": "",
+            "loss_share": sl["loss_share"],
+            "forest_share": sl["forest_share"],
+            "eligible": False,
+        })
 
     loss_img = resize_mask(loss_mask, width, height) if loss_mask is not None else None
     forest_img = resize_mask(forest_mask, width, height) if forest_mask is not None else None
@@ -498,22 +664,15 @@ def main():
     elif loss_img is not None or forest_img is not None:
         pixel_mask = np.zeros((height, width), np.float32)
         for window in windows:
+            if not window.get("eligible") or window["score"] is None:
+                continue
             left, top, right, bottom = window["box"]
-            loss_share = float(loss_img[top:bottom, left:right].mean()) if loss_img is not None else 1.0
-            forest_share = float(forest_img[top:bottom, left:right].mean()) if forest_img is not None else 1.0
-            window["loss_share"] = round(loss_share, 3)
-            window["forest_share"] = round(forest_share, 3)
-            window["eligible"] = forest_share >= 0.5 and loss_share >= 0.08
-            if not window["eligible"] and window["score"] is not None:
-                window["score_raw"] = window["score"]
-                window["score"] = 0.0
-            elif window["eligible"]:
-                pixel_mask[top:bottom, left:right] = 1.0
-                if loss_img is not None:
-                    pixel_mask[top:bottom, left:right] *= loss_img[top:bottom, left:right]
-                if forest_img is not None:
-                    pixel_mask[top:bottom, left:right] *= forest_img[top:bottom, left:right]
-        scored = [(w.get("loss_share", 1.0), w["score"]) for w in windows if w.get("eligible") and w["score"] is not None]
+            pixel_mask[top:bottom, left:right] = 1.0
+            if loss_img is not None:
+                pixel_mask[top:bottom, left:right] *= loss_img[top:bottom, left:right]
+            if forest_img is not None:
+                pixel_mask[top:bottom, left:right] *= forest_img[top:bottom, left:right]
+        scored = [(w.get("loss_share") or 0.0, w["score"]) for w in windows if w.get("eligible") and w["score"] is not None]
         weight = sum(share for share, _ in scored)
         mean_score = round(sum(share * score for share, score in scored) / weight, 3) if weight else 0.0
         image = paint((width, height), [(w["box"], w["score"]) for w in windows], pixel_mask)

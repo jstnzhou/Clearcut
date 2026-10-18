@@ -43,12 +43,12 @@ function requestedPlot() {
 
 const requested = requestedPlot();
 const state = {
-  plotUrl: "../data/plots/" + (requested || "kalbar1"),
+  plotUrl: requested ? "../data/plots/" + requested : "",
   bbox: KALBAR_BBOX.slice(),
   scenes: [],
   chips: [],
   analysisLoaded: false,
-  showingSubmission: true,
+  showingSubmission: false,
   selectedId: null,
   drawMode: true,
   drawing: false,
@@ -399,6 +399,13 @@ function scenesFrom(evidence) {
   return scenes;
 }
 
+function ensureScene(url, coords) {
+  if (map.getSource("scene")) return;
+  const before = map.getLayer("chips-fill") ? "chips-fill" : undefined;
+  map.addSource("scene", { type: "image", url: url, coordinates: coords });
+  map.addLayer({ id: "scene", type: "raster", source: "scene" }, before);
+}
+
 function setTime(index) {
   const scenes = state.scenes;
   if (!scenes.length) return;
@@ -408,11 +415,13 @@ function setTime(index) {
   sceneDate.textContent = formatDate(scenes[next].date);
   if (!state.mapReady || !state.showingSubmission) return;
   const source = map.getSource("scene");
-  if (!source) return;
-  source.updateImage({
-    url: state.plotUrl + "/" + scenes[next].file,
-    coordinates: imageCoordinates(state.bbox)
-  });
+  const coords = imageCoordinates(state.bbox);
+  const url = state.plotUrl + "/" + scenes[next].file;
+  if (!source) {
+    ensureScene(url, coords);
+    return;
+  }
+  source.updateImage({ url: url, coordinates: coords });
 }
 
 function chipCollection() {
@@ -486,8 +495,8 @@ function displaySubmission() {
   state.selectedId = null;
   if (state.mapReady) {
     setDraft(null);
-    map.setLayoutProperty("scene", "visibility", "visible");
     setTime(timeInput.value);
+    if (map.getLayer("scene")) map.setLayoutProperty("scene", "visibility", "visible");
     applyChips();
     showConfidence();
   }
@@ -584,7 +593,6 @@ function setDrawMode(on) {
 }
 
 let map = null;
-loadPlot();
 
 try {
   map = new maplibregl.Map({
@@ -610,6 +618,7 @@ try {
   attributionControl: true,
   boxZoom: false
   });
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 140, unit: "metric" }), "bottom-right");
 } catch (error) {
   statusEl.hidden = false;
   statusEl.textContent = "The map could not start in this browser.";
@@ -617,18 +626,6 @@ try {
 
 if (map) {
 map.on("load", function () {
-  const coords = imageCoordinates(state.bbox);
-  map.addSource("scene", {
-    type: "image",
-    url: state.plotUrl + "/after.png",
-    coordinates: coords
-  });
-  map.addLayer({
-    id: "scene",
-    type: "raster",
-    source: "scene",
-    layout: { visibility: "visible" }
-  });
   map.addSource("chips", { type: "geojson", data: emptyCollection() });
   map.addLayer({
     id: "chips-fill",
@@ -691,8 +688,12 @@ map.on("load", function () {
 
   state.mapReady = true;
   setDrawMode(true);
-  applyChips();
-  showSubmission(false);
+  map.fitBounds(
+    [[KALBAR_BBOX[0], KALBAR_BBOX[1]], [KALBAR_BBOX[2], KALBAR_BBOX[3]]],
+    { padding: fitPadding(), maxZoom: 13, duration: 0 }
+  );
+  renderPanel();
+  if (requested) openPlot(requested, false);
 });
 
 map.on("mousedown", function (event) {
@@ -720,8 +721,7 @@ window.addEventListener("mouseup", function (event) {
     return;
   }
   state.suppressClick = true;
-  if (iou(box.bbox, state.bbox) >= 0.3 && state.plotUrl.endsWith("kalbar1")) displaySubmission();
-  else showUnknown(box.feature, box.bbox);
+  showUnknown(box.feature, box.bbox);
 });
 
 map.on("click", function (event) {
@@ -753,11 +753,6 @@ map.on("mousemove", function (event) {
 
 document.getElementById("tool-pan").addEventListener("click", function () { setDrawMode(false); });
 document.getElementById("tool-box").addEventListener("click", function () { setDrawMode(true); });
-document.getElementById("show-kalbar").addEventListener("click", function () {
-  state.plotUrl = "../data/plots/kalbar1";
-  state.bbox = KALBAR_BBOX.slice();
-  loadPlot().then(function () { showSubmission(true); });
-});
 
 function openPlot(id, animate) {
   if (!/^[A-Za-z0-9_]+$/.test(id)) return Promise.resolve();
@@ -786,18 +781,11 @@ document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
   if (!state.draftBbox) return;
   button.disabled = true;
-  analyzeNote.textContent = document.getElementById("use-perceptron").checked
-    ? "Fetching the years and scoring the tiles."
-    : "Fetching the years and the forest and loss maps.";
+  analyzeNote.textContent = "Fetching the years and scoring the tiles.";
   fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      bbox: state.draftBbox,
-      perceptron: document.getElementById("use-perceptron").checked,
-      forest: document.getElementById("use-forest").checked,
-      loss: document.getElementById("use-loss").checked
-    })
+    body: JSON.stringify({ bbox: state.draftBbox })
   }).then(function (response) {
     return response.json().then(function (payload) {
       if (!response.ok) throw new Error(payload.error || "Analysis failed");
