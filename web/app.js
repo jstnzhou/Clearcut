@@ -35,8 +35,6 @@ const analyzeNote = document.getElementById("analyze-note");
 const boardDialog = document.getElementById("board-dialog");
 const boardDialogList = document.getElementById("board-dialog-list");
 const boardDialogNote = document.getElementById("board-dialog-note");
-const boardPreview = document.getElementById("board-preview");
-const boardPreviewNote = document.getElementById("board-preview-note");
 
 function requestedPlot() {
   const raw = new URLSearchParams(window.location.search).get("plot") || "";
@@ -560,9 +558,7 @@ function setDrawMode(on) {
 }
 
 let map = null;
-loadPlot().then(function () {
-  refreshBoard();
-});
+loadPlot();
 
 try {
   map = new maplibregl.Map({
@@ -748,24 +744,15 @@ function openPlot(id, animate) {
 function refreshBoard() {
   return fetchBoard().then(function (data) {
     const count = (data.plots && data.plots.length) || 0;
-    boardPreviewNote.textContent = count ? "Ranked by conversion confidence." : "";
-    if (boardDialogNote) {
-      boardDialogNote.textContent = count ? count + " scored plots." : "";
-    }
-    paintBoard(boardPreview, data, {
-      limit: 5,
-      onOpen: function (plot) { openPlot(plot.id, true); }
+    boardDialogNote.textContent = count ? count + " scored plots." : "No scored plots yet.";
+    paintBoard(boardDialogList, data, {
+      onOpen: function (plot) {
+        if (boardDialog && boardDialog.open) boardDialog.close();
+        openPlot(plot.id, true);
+      }
     });
-    if (boardDialogList) {
-      paintBoard(boardDialogList, data, {
-        onOpen: function (plot) {
-          if (boardDialog && boardDialog.open) boardDialog.close();
-          openPlot(plot.id, true);
-        }
-      });
-    }
   }).catch(function () {
-    boardPreviewNote.textContent = "Board unavailable.";
+    boardDialogNote.textContent = "Board unavailable.";
   });
 }
 
@@ -787,9 +774,7 @@ document.getElementById("analyze").addEventListener("click", function () {
     analyzeNote.textContent = payload.cached
       ? "Loaded a cached check for this area."
       : "";
-    return openPlot(payload.plot, true).then(function () {
-      return refreshBoard();
-    });
+    return openPlot(payload.plot, true);
   }).catch(function (error) {
     analyzeNote.textContent = error.message || "Analysis failed";
   }).finally(function () {
@@ -800,10 +785,6 @@ document.getElementById("analyze").addEventListener("click", function () {
 document.getElementById("open-board").addEventListener("click", function () {
   refreshBoard();
   if (boardDialog && boardDialog.showModal) boardDialog.showModal();
-});
-
-document.getElementById("popout-board").addEventListener("click", function () {
-  window.open("leaderboard.html", "clearcut-board", "popup=yes,width=760,height=900");
 });
 
 document.getElementById("close-board").addEventListener("click", function () {

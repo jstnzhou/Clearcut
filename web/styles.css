@@ -394,12 +394,3 @@ input[type="range"] {
   background: #eceae4;
   color: #16181b;
 }
-
-#board-preview .board-table th:last-child,
-#board-preview .board-table td:last-child {
-  display: none;
-}
-
-#board-preview .board-table {
-  font-size: 13px;
-}

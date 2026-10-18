@@ -14,7 +14,7 @@
       "mean_score": 1.0,
       "gated": true,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:53.099974Z",
+      "analyzed_at": "2026-10-18T02:20:53Z",
       "hits": 1
     },
     {
@@ -31,7 +31,7 @@
       "mean_score": 1.0,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:53.396784Z",
+      "analyzed_at": "2026-10-18T02:20:53Z",
       "hits": 1
     },
     {
@@ -48,7 +48,7 @@
       "mean_score": 1.0,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:54.527485Z",
+      "analyzed_at": "2026-10-18T02:20:54Z",
       "hits": 1
     },
     {
@@ -65,7 +65,7 @@
       "mean_score": 1.0,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:54.707597Z",
+      "analyzed_at": "2026-10-18T02:20:54Z",
       "hits": 1
     },
     {
@@ -82,7 +82,7 @@
       "mean_score": 1.0,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:54.751945Z",
+      "analyzed_at": "2026-10-18T02:20:54Z",
       "hits": 1
     },
     {
@@ -99,7 +99,7 @@
       "mean_score": 1.0,
       "gated": true,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:55.115463Z",
+      "analyzed_at": "2026-10-18T02:20:55Z",
       "hits": 1
     },
     {
@@ -116,7 +116,7 @@
       "mean_score": 1.0,
       "gated": true,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:55.331195Z",
+      "analyzed_at": "2026-10-18T02:20:55Z",
       "hits": 1
     },
     {
@@ -133,7 +133,7 @@
       "mean_score": 0.978,
       "gated": true,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:54.832273Z",
+      "analyzed_at": "2026-10-18T02:20:54Z",
       "hits": 1
     },
     {
@@ -150,7 +150,7 @@
       "mean_score": 0.95,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:54.983258Z",
+      "analyzed_at": "2026-10-18T02:20:54Z",
       "hits": 1
     },
     {
@@ -167,7 +167,7 @@
       "mean_score": 0.75,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:54.916190Z",
+      "analyzed_at": "2026-10-18T02:20:54Z",
       "hits": 1
     },
     {
@@ -184,7 +184,7 @@
       "mean_score": 0.675,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:55.035377Z",
+      "analyzed_at": "2026-10-18T02:20:55Z",
       "hits": 1
     },
     {
@@ -201,7 +201,7 @@
       "mean_score": 0.541,
       "gated": true,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:55.890298Z",
+      "analyzed_at": "2026-10-18T02:20:55Z",
       "hits": 1
     },
     {
@@ -218,7 +218,7 @@
       "mean_score": 0.505,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:55.780774Z",
+      "analyzed_at": "2026-10-18T02:20:55Z",
       "hits": 2,
       "last_seen": "2026-10-18T02:40:57.508521Z"
     },
@@ -236,7 +236,7 @@
       "mean_score": 0.487,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:52.636470Z",
+      "analyzed_at": "2026-10-18T02:20:52Z",
       "hits": 1
     },
     {
@@ -253,7 +253,7 @@
       "mean_score": 0.482,
       "gated": true,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:53.515307Z",
+      "analyzed_at": "2026-10-18T02:20:53Z",
       "hits": 1
     },
     {
@@ -270,7 +270,7 @@
       "mean_score": 0.25,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:56.053883Z",
+      "analyzed_at": "2026-10-18T02:20:56Z",
       "hits": 1
     },
     {
@@ -287,7 +287,7 @@
       "mean_score": 0.0,
       "gated": true,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:52.450909Z",
+      "analyzed_at": "2026-10-18T02:20:52Z",
       "hits": 1
     },
     {
@@ -304,7 +304,7 @@
       "mean_score": 0.0,
       "gated": false,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:53.379204Z",
+      "analyzed_at": "2026-10-18T02:20:53Z",
       "hits": 1
     },
     {
@@ -321,9 +321,10 @@
       "mean_score": 0.0,
       "gated": true,
       "model": "perceptron-mk1.5",
-      "analyzed_at": "2026-10-18T02:20:55.474980Z",
-      "hits": 1
+      "analyzed_at": "2026-10-18T02:20:55Z",
+      "hits": 2,
+      "last_seen": "2026-10-18T02:53:22.743293Z"
     }
   ],
-  "updated": "2026-10-18T02:40:57.509166Z"
+  "updated": "2026-10-18T02:53:22.746624Z"
 }
