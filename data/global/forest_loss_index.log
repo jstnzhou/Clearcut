@@ -1,0 +1,13 @@
+2026-10-18T03:07:48Z method=area_share_of_0.01deg_nearest_samples_reduced_to_0.1deg queued=503 already_done=1 workers=3
+2026-10-18T03:07:48Z 00N_160W missing RasterioIOError: HTTP response code: 404 seconds=0.2 done=1 failed=1
+2026-10-18T03:07:48Z 00N_170W missing RasterioIOError: HTTP response code: 404 seconds=0.2 done=1 failed=2
+2026-10-18T03:07:48Z 00N_180W missing RasterioIOError: HTTP response code: 404 seconds=0.2 done=1 failed=3
+2026-10-18T03:07:48Z 00N_150W missing RasterioIOError: HTTP response code: 404 seconds=0.1 done=1 failed=4
+2026-10-18T03:07:48Z 00N_140W missing RasterioIOError: HTTP response code: 404 seconds=0.1 done=1 failed=5
+2026-10-18T03:07:48Z 00N_130W missing RasterioIOError: HTTP response code: 404 seconds=0.1 done=1 failed=6
+2026-10-18T03:07:49Z 00N_120W missing RasterioIOError: HTTP response code: 404 seconds=0.0 done=1 failed=7
+2026-10-18T03:07:49Z 00N_110W missing RasterioIOError: HTTP response code: 404 seconds=0.1 done=1 failed=8
+2026-10-18T03:08:10Z 00N_100W ok loss_share=0.0 n_loss_cells=0 seconds=21.6 done=2 failed=8
+2026-10-18T03:08:41Z 00N_090W error RasterioIOError: Read failed. See previous exception for details. seconds=53.1 done=2 failed=9
+/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:475: UserWarning: resource_tracker: There appear to be 5 leaked semaphore objects to clean up at shutdown: {'/mp-vjxw8mza', '/mp-_y3x09co', '/mp-2h6c_u11', '/mp-qdvbxltn', '/mp-q97n68ma'}
+  warnings.warn(
