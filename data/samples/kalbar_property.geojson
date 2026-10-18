@@ -1,0 +1,24 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "KS-19 submitted plot",
+        "company": "Fictional plantation KS Agro"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [110.05, -0.75],
+            [110.11, -0.75],
+            [110.11, -0.81],
+            [110.05, -0.81],
+            [110.05, -0.75]
+          ]
+        ]
+      }
+    }
+  ]
+}

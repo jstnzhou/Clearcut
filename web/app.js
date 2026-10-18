@@ -32,6 +32,11 @@ const sceneDate = document.getElementById("scene-date");
 const timeInput = document.getElementById("time");
 const flyNote = document.getElementById("fly-note");
 const analyzeNote = document.getElementById("analyze-note");
+const intakeNote = document.getElementById("intake-note");
+const intakeFileName = document.getElementById("intake-file-name");
+const intakeFeatureBox = document.getElementById("intake-features");
+const intakeFeatureList = document.getElementById("intake-feature-list");
+const intakeSelected = document.getElementById("intake-selected");
 
 const state = {
   plotUrl: "",
@@ -41,10 +46,18 @@ const state = {
   analysisLoaded: false,
   showingSubmission: false,
   selectedId: null,
+  tool: "box", // pan | box | shape
   drawMode: true,
   drawing: false,
   dragStart: null,
+  shapePoints: [],
   draftBbox: null,
+  draftGeometry: null,
+  draftFeature: null,
+  intakeMethod: "draw",
+  intakeFilename: null,
+  intakeItems: [],
+  intakeSelectedId: null,
   confidence: null,
   suppressClick: false,
   mapReady: false
@@ -304,9 +317,9 @@ function renderFinding() {
         loss.textContent = Math.round(mean * 1000) / 10 + "% of the rectangle is green.";
       }
     } else {
-      loss.textContent = state.plotUrl.endsWith("kalbar1")
-        ? "About 880 hectares of this box were cleared in 2023."
-        : "The scored share of post-2020 loss is " + mean.toFixed(2) + ".";
+      loss.textContent = state.confidence.gated
+        ? "Mean confidence " + mean.toFixed(2) + " where trees were lost after 2020."
+        : "Mean confidence " + mean.toFixed(2) + " across the tiles.";
     }
     findingEl.append(verdict, disclaimer, loss);
     return;
@@ -361,22 +374,9 @@ function renderSelection() {
 function renderPanel() {
   viewSubmission.hidden = !state.showingSubmission;
   viewUnknown.hidden = state.showingSubmission;
-  const nameEl = document.querySelector(".plot-name");
-  const coordsEl = document.querySelector(".coords");
-  const lat = (state.bbox[1] + state.bbox[3]) / 2;
-  const lon = (state.bbox[0] + state.bbox[2]) / 2;
-  if (nameEl) {
-    nameEl.textContent = state.plotUrl.endsWith("kalbar1")
-      ? "Plot KS-19, a fictional plantation."
-      : "Checked plot";
-  }
-  if (coordsEl) {
-    coordsEl.textContent = "Coordinates " + lat.toFixed(2) + ", " + lon.toFixed(2) + ".";
-  }
   if (!state.showingSubmission) return;
-  const chipsReady = state.analysisLoaded || !!state.confidence;
-  statusEl.hidden = chipsReady;
-  statusEl.textContent = chipsReady ? "" : "Chip analysis is still running.";
+  statusEl.hidden = state.analysisLoaded;
+  statusEl.textContent = state.analysisLoaded ? "" : "Chip analysis is still running.";
   renderFinding();
   renderSelection();
 }
@@ -505,6 +505,79 @@ function setDraft(feature) {
   map.getSource("draft").setData(feature ? { type: "FeatureCollection", features: [feature] } : emptyCollection());
 }
 
+function setSketch(data) {
+  if (!state.mapReady || !map.getSource("sketch")) return;
+  map.getSource("sketch").setData(data || emptyCollection());
+}
+
+function clearIntakeList() {
+  state.intakeItems = [];
+  state.intakeSelectedId = null;
+  state.intakeFilename = null;
+  if (intakeFeatureBox) intakeFeatureBox.hidden = true;
+  if (intakeFileName) intakeFileName.textContent = "";
+  updateIntakeSelected();
+}
+
+function distanceMeters(a, b) {
+  const toRad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * toRad;
+  const dLon = (b.lng - a.lng) * toRad;
+  const lat1 = a.lat * toRad;
+  const lat2 = b.lat * toRad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 6371000 * 2 * Math.asin(Math.sqrt(h));
+}
+
+function simplifyPoints(points, minMeters) {
+  if (points.length < 3) return points.slice();
+  const out = [points[0]];
+  for (let i = 1; i < points.length; i += 1) {
+    if (distanceMeters(out[out.length - 1], points[i]) >= minMeters) out.push(points[i]);
+  }
+  if (out.length < 2) out.push(points[points.length - 1]);
+  else if (distanceMeters(out[out.length - 1], points[points.length - 1]) > 1) {
+    out.push(points[points.length - 1]);
+  }
+  return out;
+}
+
+function polygonFromPoints(points) {
+  const cleaned = simplifyPoints(points, 12);
+  if (cleaned.length < 3) return null;
+  const ring = cleaned.map(function (pt) { return [pt.lng, pt.lat]; });
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (first[0] !== last[0] || first[1] !== last[1]) ring.push(first.slice());
+  if (ring.length < 4) return null;
+  const bbox = window.ClearcutIntake.ringBBox(ring);
+  if (!bbox) return null;
+  const feature = {
+    type: "Feature",
+    properties: { name: "Drawn shape" },
+    geometry: { type: "Polygon", coordinates: [ring] }
+  };
+  return { feature: feature, bbox: bbox };
+}
+
+function sketchCollection(points, closed) {
+  if (!points.length) return emptyCollection();
+  const line = points.map(function (pt) { return [pt.lng, pt.lat]; });
+  const features = [{
+    type: "Feature",
+    properties: {},
+    geometry: { type: "LineString", coordinates: closed && line.length ? line.concat([line[0]]) : line }
+  }];
+  points.forEach(function (pt) {
+    features.push({
+      type: "Feature",
+      properties: {},
+      geometry: { type: "Point", coordinates: [pt.lng, pt.lat] }
+    });
+  });
+  return { type: "FeatureCollection", features: features };
+}
+
 function displaySubmission() {
   state.showingSubmission = true;
   state.selectedId = null;
@@ -538,10 +611,15 @@ function showSubmission(animate) {
   );
 }
 
-function showUnknown(feature, bbox) {
+function showUnknown(feature, bbox, options) {
+  const opts = options || {};
   state.showingSubmission = false;
   state.selectedId = null;
   state.draftBbox = bbox;
+  state.draftFeature = feature || null;
+  state.draftGeometry = feature && feature.geometry ? feature.geometry : null;
+  state.intakeMethod = opts.inputMethod || "draw";
+  if (opts.filename) state.intakeFilename = opts.filename;
   setDraft(feature);
   if (state.mapReady && map.getLayer("scene")) {
     map.setLayoutProperty("scene", "visibility", "none");
@@ -549,6 +627,86 @@ function showUnknown(feature, bbox) {
   applyChips();
   renderPanel();
   analyzeNote.textContent = "";
+  updateIntakeSelected();
+  if (bbox && map) {
+    map.fitBounds(
+      [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
+      { padding: fitPadding(), maxZoom: 13, duration: 700 }
+    );
+  }
+}
+
+function updateIntakeSelected() {
+  if (!intakeSelected) return;
+  const item = state.intakeItems.find(function (row) { return row.id === state.intakeSelectedId; });
+  if (!item) {
+    intakeSelected.hidden = true;
+    return;
+  }
+  intakeSelected.hidden = false;
+  document.getElementById("intake-selected-name").textContent = item.label;
+  document.getElementById("intake-selected-source").textContent =
+    (state.intakeFilename || state.intakeMethod || "upload") + " · " + state.intakeMethod;
+}
+
+function renderIntakeFeatures(items) {
+  state.intakeItems = items || [];
+  if (!intakeFeatureBox || !intakeFeatureList) return;
+  intakeFeatureList.replaceChildren();
+  if (!state.intakeItems.length) {
+    intakeFeatureBox.hidden = true;
+    state.intakeSelectedId = null;
+    updateIntakeSelected();
+    return;
+  }
+  intakeFeatureBox.hidden = false;
+  state.intakeItems.forEach(function (item) {
+    const li = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = item.label;
+    button.className = item.id === state.intakeSelectedId ? "active" : "";
+    button.addEventListener("click", function () { selectIntakeItem(item.id); });
+    li.append(button);
+    intakeFeatureList.append(li);
+  });
+  if (state.intakeSelectedId == null) selectIntakeItem(state.intakeItems[0].id);
+  else updateIntakeSelected();
+}
+
+function selectIntakeItem(id) {
+  const item = state.intakeItems.find(function (row) { return row.id === id; });
+  if (!item) return;
+  const error = window.ClearcutIntake.validateBBox(item.bbox);
+  if (error) {
+    intakeNote.textContent = error;
+    return;
+  }
+  state.intakeSelectedId = id;
+  intakeNote.textContent = "Selected “" + item.label + "”. Analyze when ready.";
+  renderIntakeFeatures(state.intakeItems);
+  showUnknown(item.feature, item.bbox.slice(), {
+    inputMethod: state.intakeMethod,
+    filename: state.intakeFilename
+  });
+}
+
+async function ingestParsed(parsed) {
+  state.intakeMethod = parsed.method;
+  state.intakeFilename = parsed.filename || null;
+  if (intakeFileName) intakeFileName.textContent = parsed.filename || "";
+  state.intakeSelectedId = null;
+  renderIntakeFeatures(parsed.items);
+}
+
+async function loadSampleProperty() {
+  intakeNote.textContent = "Loading sample GeoJSON…";
+  const response = await fetch("/data/samples/kalbar_property.geojson");
+  if (!response.ok) throw new Error("Sample property file missing.");
+  const text = await response.text();
+  const items = window.ClearcutIntake.normalizeGeoJSON(text);
+  await ingestParsed({ method: "sample_geojson", items: items, filename: "kalbar_property.geojson" });
+  intakeNote.textContent = "Sample West Kalimantan plot loaded.";
 }
 
 function selectChip(id) {
@@ -597,14 +755,88 @@ function eventLngLat(event) {
   return map.unproject([event.clientX - rect.left, event.clientY - rect.top]);
 }
 
-function setDrawMode(on) {
-  state.drawMode = on;
-  document.getElementById("tool-box").classList.toggle("active", on);
-  document.getElementById("tool-pan").classList.toggle("active", !on);
+function moveModeFloat(target) {
+  const tools = document.getElementById("tools");
+  const floatEl = document.getElementById("mode-float");
+  if (!tools || !floatEl || !target) return;
+  const toolsRect = tools.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+  const left = rect.left - toolsRect.left;
+  const top = rect.top - toolsRect.top;
+  floatEl.style.width = rect.width + "px";
+  floatEl.style.height = rect.height + "px";
+  floatEl.style.transform = "translate(" + left + "px, " + top + "px)";
+  floatEl.classList.add("visible");
+}
+
+function syncModeFloatToActive() {
+  const active = document.querySelector("#tools .mode-option.active");
+  if (active) moveModeFloat(active);
+}
+
+function bindModeFloatHover() {
+  const tools = document.getElementById("tools");
+  if (!tools || tools.dataset.floatBound === "1") return;
+  tools.dataset.floatBound = "1";
+  tools.querySelectorAll(".mode-option").forEach(function (button) {
+    button.addEventListener("mouseenter", function () {
+      moveModeFloat(button);
+    });
+    button.addEventListener("focus", function () {
+      moveModeFloat(button);
+    });
+  });
+  tools.addEventListener("mouseleave", function () {
+    syncModeFloatToActive();
+  });
+  window.addEventListener("resize", function () {
+    syncModeFloatToActive();
+  });
+}
+
+function setTool(tool) {
+  state.tool = tool;
+  state.drawMode = tool === "box" || tool === "shape";
+  state.drawing = false;
+  state.dragStart = null;
+  state.shapePoints = [];
+  setSketch(emptyCollection());
+
+  ["pan", "box", "shape", "upload"].forEach(function (name) {
+    const button = document.getElementById("tool-" + name);
+    if (!button) return;
+    const active = name === tool;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-checked", active ? "true" : "false");
+  });
+
+  const intake = document.getElementById("intake");
+  if (intake) intake.classList.toggle("intake-focus", tool === "upload");
+
+  const copy = document.getElementById("unknown-copy");
+  if (copy && !state.showingSubmission) {
+    if (tool === "shape") copy.textContent = "Drag any shape around the property, then analyze.";
+    else if (tool === "box") copy.textContent = "Drag a box around the property, then analyze.";
+    else if (tool === "upload") copy.textContent = "Upload or paste GeoJSON, KML, or GPX below.";
+    else copy.textContent = "Pan the map, or choose Box / Shape / Upload.";
+  }
+
+  if (tool === "upload" && intake) {
+    intake.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const file = document.getElementById("intake-file");
+    if (file) file.focus({ preventScroll: true });
+  }
+
+  syncModeFloatToActive();
+
   if (!state.mapReady) return;
-  if (on) map.dragPan.disable();
+  if (state.drawMode) map.dragPan.disable();
   else map.dragPan.enable();
-  map.getCanvas().style.cursor = on ? "crosshair" : "";
+  map.getCanvas().style.cursor = state.drawMode ? "crosshair" : "";
+}
+
+function setDrawMode(on) {
+  setTool(on ? "box" : "pan");
 }
 
 let map = null;
@@ -700,9 +932,29 @@ map.on("load", function () {
     source: "draft",
     paint: { "line-color": "#ffffff", "line-width": 2, "line-dasharray": [1.5, 1] }
   });
+  map.addSource("sketch", { type: "geojson", data: emptyCollection() });
+  map.addLayer({
+    id: "sketch-line",
+    type: "line",
+    source: "sketch",
+    filter: ["==", ["geometry-type"], "LineString"],
+    paint: { "line-color": "#ffffff", "line-width": 2.5 }
+  });
+  map.addLayer({
+    id: "sketch-points",
+    type: "circle",
+    source: "sketch",
+    filter: ["==", ["geometry-type"], "Point"],
+    paint: {
+      "circle-radius": 3.5,
+      "circle-color": "#ffffff",
+      "circle-stroke-width": 1,
+      "circle-stroke-color": "#16181b"
+    }
+  });
 
   state.mapReady = true;
-  setDrawMode(true);
+  setTool("box");
   map.fitBounds(
     [[KALBAR_BBOX[0], KALBAR_BBOX[1]], [KALBAR_BBOX[2], KALBAR_BBOX[3]]],
     { padding: fitPadding(), maxZoom: 13, duration: 0 }
@@ -714,28 +966,70 @@ map.on("mousedown", function (event) {
   if (!state.drawMode || event.originalEvent.button !== 0) return;
   state.drawing = true;
   state.dragStart = event.lngLat;
+  if (state.tool === "shape") {
+    state.shapePoints = [{ lng: event.lngLat.lng, lat: event.lngLat.lat }];
+    setSketch(sketchCollection(state.shapePoints, false));
+  }
   event.preventDefault();
 });
 
 window.addEventListener("mousemove", function (event) {
   if (!state.drawing || !state.dragStart) return;
-  const box = rectangle(state.dragStart, eventLngLat(event));
-  setDraft(box.feature);
+  const ll = eventLngLat(event);
+  if (state.tool === "box") {
+    const box = rectangle(state.dragStart, ll);
+    setDraft(box.feature);
+    return;
+  }
+  if (state.tool === "shape") {
+    const last = state.shapePoints[state.shapePoints.length - 1];
+    if (!last || distanceMeters(last, { lng: ll.lng, lat: ll.lat }) >= 8) {
+      state.shapePoints.push({ lng: ll.lng, lat: ll.lat });
+      setSketch(sketchCollection(state.shapePoints, true));
+    }
+  }
 });
 
 window.addEventListener("mouseup", function (event) {
   if (!state.drawing || !state.dragStart) return;
   state.drawing = false;
-  const box = rectangle(state.dragStart, eventLngLat(event));
+  const start = state.dragStart;
   state.dragStart = null;
-  const width = box.bbox[2] - box.bbox[0];
-  const height = box.bbox[3] - box.bbox[1];
-  if (width < 0.002 && height < 0.002) {
-    if (state.showingSubmission) setDraft(null);
+
+  if (state.tool === "box") {
+    const box = rectangle(start, eventLngLat(event));
+    const width = box.bbox[2] - box.bbox[0];
+    const height = box.bbox[3] - box.bbox[1];
+    if (width < 0.002 && height < 0.002) {
+      if (state.showingSubmission) setDraft(null);
+      return;
+    }
+    state.suppressClick = true;
+    clearIntakeList();
+    setSketch(emptyCollection());
+    showUnknown(box.feature, box.bbox, { inputMethod: "draw_box" });
     return;
   }
-  state.suppressClick = true;
-  showUnknown(box.feature, box.bbox);
+
+  if (state.tool === "shape") {
+    const ll = eventLngLat(event);
+    state.shapePoints.push({ lng: ll.lng, lat: ll.lat });
+    const built = polygonFromPoints(state.shapePoints);
+    state.shapePoints = [];
+    setSketch(emptyCollection());
+    if (!built) {
+      analyzeNote.textContent = "Draw a larger shape — drag around the property boundary.";
+      return;
+    }
+    const error = window.ClearcutIntake.validateBBox(built.bbox);
+    if (error) {
+      analyzeNote.textContent = error;
+      return;
+    }
+    state.suppressClick = true;
+    clearIntakeList();
+    showUnknown(built.feature, built.bbox, { inputMethod: "draw_shape" });
+  }
 });
 
 map.on("click", function (event) {
@@ -763,10 +1057,20 @@ map.on("mousemove", function (event) {
   }
   map.getCanvas().style.cursor = state.drawMode ? "crosshair" : "";
 });
+
+window.addEventListener("keydown", function (event) {
+  if (event.key === "Escape" && state.tool === "shape") {
+    state.drawing = false;
+    state.dragStart = null;
+    state.shapePoints = [];
+    setSketch(emptyCollection());
+  }
+});
 }
 
-document.getElementById("tool-pan").addEventListener("click", function () { setDrawMode(false); });
-document.getElementById("tool-box").addEventListener("click", function () { setDrawMode(true); });
+bindModeFloatHover();
+
+
 function openPlot(id) {
   if (!/^[A-Za-z0-9_]+$/.test(id)) return Promise.resolve();
   analyzeNote.textContent = "";
@@ -779,6 +1083,7 @@ function openPlot(id) {
 function paintBoard(data) {
   const list = document.getElementById("board-list");
   const note = document.getElementById("board-note");
+  if (!list || !note) return;
   const plots = (data && data.plots) || [];
   note.textContent = plots.length
     ? plots.length + " checked plots. Percent of the rectangle that is likely a deforested plantation, highest first."
@@ -824,40 +1129,76 @@ function paintBoard(data) {
   list.append(table);
 }
 
-document.getElementById("open-board").addEventListener("click", function () {
-  const dialog = document.getElementById("board-dialog");
-  const note = document.getElementById("board-note");
-  note.textContent = "Loading checked plots.";
-  fetch("/api/leaderboard").then(function (response) {
-    if (!response.ok) throw new Error("Could not load checked plots.");
-    return response.json();
-  }).then(function (data) {
-    paintBoard(data);
-  }).catch(function (error) {
-    note.textContent = error.message || "Could not load checked plots.";
-  });
-  if (dialog && dialog.showModal) dialog.showModal();
+document.getElementById("tool-pan").addEventListener("click", function () { setTool("pan"); });
+document.getElementById("tool-box").addEventListener("click", function () { setTool("box"); });
+(function () {
+  const button = document.getElementById("tool-shape");
+  if (button) button.addEventListener("click", function () { setTool("shape"); });
+})();
+(function () {
+  const button = document.getElementById("tool-upload");
+  if (button) button.addEventListener("click", function () { setTool("upload"); });
+})();
+
+requestAnimationFrame(function () {
+  syncModeFloatToActive();
 });
 
-document.getElementById("close-board").addEventListener("click", function () {
-  const dialog = document.getElementById("board-dialog");
-  if (dialog && dialog.open) dialog.close();
-});
+
+const openBoard = document.getElementById("open-board");
+if (openBoard) {
+  openBoard.addEventListener("click", function () {
+    const dialog = document.getElementById("board-dialog");
+    const note = document.getElementById("board-note");
+    if (note) note.textContent = "Loading checked plots.";
+    fetch("/api/leaderboard").then(function (response) {
+      if (!response.ok) throw new Error("Could not load checked plots.");
+      return response.json();
+    }).then(function (data) {
+      paintBoard(data);
+    }).catch(function (error) {
+      if (note) note.textContent = error.message || "Could not load checked plots.";
+    });
+    if (dialog && dialog.showModal) dialog.showModal();
+  });
+}
+
+const closeBoard = document.getElementById("close-board");
+if (closeBoard) {
+  closeBoard.addEventListener("click", function () {
+    const dialog = document.getElementById("board-dialog");
+    if (dialog && dialog.open) dialog.close();
+  });
+}
 
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
   if (!state.draftBbox) return;
+  const boundsError = window.ClearcutIntake && window.ClearcutIntake.validateBBox(state.draftBbox);
+  if (boundsError) {
+    analyzeNote.textContent = boundsError;
+    return;
+  }
   button.disabled = true;
   button.textContent = "Loading…";
   analyzeNote.textContent = "Fetching the years and scoring the tiles.";
+  const selected = state.intakeItems.find(function (row) { return row.id === state.intakeSelectedId; });
+  const payload = {
+    bbox: state.draftBbox,
+    geometry: state.draftGeometry,
+    input_method: state.intakeMethod || "draw",
+    source_filename: state.intakeFilename,
+    name: selected ? selected.label : undefined,
+    properties: selected ? selected.properties : {}
+  };
   fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bbox: state.draftBbox })
+    body: JSON.stringify(payload)
   }).then(function (response) {
-    return response.json().then(function (payload) {
-      if (!response.ok) throw new Error(payload.error || "Analysis failed");
-      return payload;
+    return response.json().then(function (body) {
+      if (!response.ok) throw new Error(body.error || "Analysis failed");
+      return body;
     });
   }).then(function (payload) {
     state.plotUrl = "../data/plots/" + payload.plot;
@@ -874,6 +1215,37 @@ document.getElementById("analyze").addEventListener("click", function () {
   }).finally(function () {
     button.disabled = false;
     button.textContent = "Analyze this area";
+  });
+});
+
+document.getElementById("intake-file").addEventListener("change", function (event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  intakeNote.textContent = "Reading " + file.name + "…";
+  window.ClearcutIntake.parseUpload(file).then(function (parsed) {
+    return ingestParsed(parsed);
+  }).then(function () {
+    intakeNote.textContent = "Loaded " + file.name + ". Select a feature if needed, then analyze.";
+  }).catch(function (error) {
+    intakeNote.textContent = error.message || "Could not read that file.";
+  });
+});
+
+document.getElementById("intake-paste-btn").addEventListener("click", function () {
+  const text = document.getElementById("intake-paste").value;
+  intakeNote.textContent = "Parsing GeoJSON…";
+  window.ClearcutIntake.parsePaste(text).then(function (parsed) {
+    return ingestParsed(parsed);
+  }).then(function () {
+    intakeNote.textContent = "Pasted GeoJSON ready. Analyze when ready.";
+  }).catch(function (error) {
+    intakeNote.textContent = error.message || "Could not parse that GeoJSON.";
+  });
+});
+
+document.getElementById("intake-sample").addEventListener("click", function () {
+  loadSampleProperty().catch(function (error) {
+    intakeNote.textContent = error.message || "Could not load sample.";
   });
 });
 

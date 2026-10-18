@@ -39,6 +39,23 @@ The loss map ends in 2024, so the 2026 image is evidence of what the land looks 
 
 On this submission, Clearcut's result is that the plot does not support approval.
 
+## Property intake
+
+On the demo map (`web/demo.html`), submit a plot three ways (segmented control, top-right):
+
+1. **Box** — drag a rectangle  
+2. **Shape** — freehand-drag any polygon  
+3. **Upload** — **GeoJSON**, **KML**, or **GPX** (closed walk)
+
+Sample files live in `data/samples/`. Analyze still runs on the property bounding box and writes `submission.json` + `submission.geojson` into the plot folder.
+
+React/shadcn source for the same control lives in `frontend/` (`src/components/ui/mode-toggle.tsx`):
+
+```bash
+cd frontend && npm install && npm run dev
+# http://localhost:3000
+```
+
 ## In this repository
 
 The check for that plot is produced by three steps:
