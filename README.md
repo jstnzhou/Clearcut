@@ -41,13 +41,20 @@ On this submission, Clearcut's result is that the plot does not support approval
 
 ## Property intake
 
-On the map (`web/`), submit a plot three ways:
+On the map (`web/`), submit a plot three ways (segmented control, top-right):
 
-1. **Draw box** — drag a rectangle  
-2. **Draw shape** — freehand-drag any polygon  
-3. **Upload / paste** — **GeoJSON**, **KML**, or **GPX** (closed walk)
+1. **Box** — drag a rectangle  
+2. **Shape** — freehand-drag any polygon  
+3. **Upload** — **GeoJSON**, **KML**, or **GPX** (closed walk)
 
 Sample files live in `data/samples/`. Analyze still runs on the property bounding box and writes `submission.json` + `submission.geojson` into the plot folder.
+
+React/shadcn source for the same control lives in `frontend/` (`src/components/ui/mode-toggle.tsx`):
+
+```bash
+cd frontend && npm install && npm run dev
+# http://localhost:3000
+```
 
 ## In this repository
 

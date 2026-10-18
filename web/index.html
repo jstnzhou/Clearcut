@@ -94,10 +94,37 @@
     </ul>
   </aside>
 
-  <div id="tools">
-    <button id="tool-pan" type="button">Pan</button>
-    <button id="tool-box" type="button" class="active">Draw box</button>
-    <button id="tool-shape" type="button">Draw shape</button>
+  <div id="tools" class="mode-toggle" role="radiogroup" aria-label="Property intake mode">
+    <button id="tool-box" type="button" class="mode-option active" role="radio" aria-checked="true" aria-label="Draw box" title="Drag a rectangle around the plot">
+      <span class="mode-indicator" aria-hidden="true"></span>
+      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="4" width="16" height="16" rx="1" stroke-dasharray="3 3"></rect>
+        <path d="M17 17h3v3"></path>
+        <path d="M19.5 19.5 22 22"></path>
+      </svg>
+      <span class="mode-label">Box</span>
+    </button>
+    <button id="tool-shape" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Draw shape" title="Freehand-drag any property boundary">
+      <span class="mode-indicator" aria-hidden="true"></span>
+      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 6c2-2 5-2 7 0s3 5 1 7-5 3-7 1-3-5-1-7Z"></path>
+        <path d="M14 14c1.5 1 3 3 2.5 5"></path>
+      </svg>
+      <span class="mode-label">Shape</span>
+    </button>
+    <button id="tool-upload" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Upload boundary" title="Upload GeoJSON, KML, or GPX">
+      <span class="mode-indicator" aria-hidden="true"></span>
+      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V5"></path>
+        <path d="m8 9 4-4 4 4"></path>
+        <path d="M4 19h16"></path>
+      </svg>
+      <span class="mode-label">Upload</span>
+    </button>
+    <button id="tool-pan" type="button" class="mode-option mode-pan" role="radio" aria-checked="false" aria-label="Pan map" title="Pan the map">
+      <span class="mode-indicator" aria-hidden="true"></span>
+      <span class="mode-label">Pan</span>
+    </button>
   </div>
 
   <div id="timebar">

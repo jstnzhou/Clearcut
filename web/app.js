@@ -737,15 +737,32 @@ function setTool(tool) {
   state.dragStart = null;
   state.shapePoints = [];
   setSketch(emptyCollection());
-  document.getElementById("tool-pan").classList.toggle("active", tool === "pan");
-  document.getElementById("tool-box").classList.toggle("active", tool === "box");
-  document.getElementById("tool-shape").classList.toggle("active", tool === "shape");
+
+  ["pan", "box", "shape", "upload"].forEach(function (name) {
+    const button = document.getElementById("tool-" + name);
+    if (!button) return;
+    const active = name === tool;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-checked", active ? "true" : "false");
+  });
+
+  const intake = document.getElementById("intake");
+  if (intake) intake.classList.toggle("intake-focus", tool === "upload");
+
   const copy = document.getElementById("unknown-copy");
   if (copy && !state.showingSubmission) {
     if (tool === "shape") copy.textContent = "Drag any shape around the property, then analyze.";
-    else if (tool === "box") copy.textContent = "Draw a box, sketch a shape, or upload a boundary.";
-    else copy.textContent = "Pan the map, or choose Draw box / Draw shape.";
+    else if (tool === "box") copy.textContent = "Drag a box around the property, then analyze.";
+    else if (tool === "upload") copy.textContent = "Upload or paste GeoJSON, KML, or GPX below.";
+    else copy.textContent = "Pan the map, or choose Box / Shape / Upload.";
   }
+
+  if (tool === "upload" && intake) {
+    intake.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const file = document.getElementById("intake-file");
+    if (file) file.focus({ preventScroll: true });
+  }
+
   if (!state.mapReady) return;
   if (state.drawMode) map.dragPan.disable();
   else map.dragPan.enable();
@@ -988,6 +1005,7 @@ window.addEventListener("keydown", function (event) {
 document.getElementById("tool-pan").addEventListener("click", function () { setTool("pan"); });
 document.getElementById("tool-box").addEventListener("click", function () { setTool("box"); });
 document.getElementById("tool-shape").addEventListener("click", function () { setTool("shape"); });
+document.getElementById("tool-upload").addEventListener("click", function () { setTool("upload"); });
 
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
