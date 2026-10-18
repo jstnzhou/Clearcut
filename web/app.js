@@ -375,8 +375,9 @@ function renderPanel() {
   viewSubmission.hidden = !state.showingSubmission;
   viewUnknown.hidden = state.showingSubmission;
   if (!state.showingSubmission) return;
-  statusEl.hidden = state.analysisLoaded;
-  statusEl.textContent = state.analysisLoaded ? "" : "Chip analysis is still running.";
+  const chipsReady = state.analysisLoaded || !!state.confidence;
+  statusEl.hidden = chipsReady;
+  statusEl.textContent = chipsReady ? "" : "Chip analysis is still running.";
   renderFinding();
   renderSelection();
 }
