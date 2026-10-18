@@ -276,6 +276,33 @@ def slug(text: str) -> str:
     return cleaned[:48] or "plot"
 
 
+def is_rectangle_geometry(geometry, bbox):
+    """True when geometry is missing or is essentially the axis-aligned bbox."""
+    if not isinstance(geometry, dict):
+        return True
+    gtype = geometry.get("type")
+    coords = geometry.get("coordinates")
+    ring = None
+    if gtype == "Polygon" and coords:
+        ring = coords[0]
+    elif gtype == "MultiPolygon" and coords and len(coords) == 1 and coords[0]:
+        ring = coords[0][0]
+    if not ring or len(ring) < 4:
+        return True
+    # Closed ring with only the four bbox corners (order may vary).
+    pts = {(round(float(pt[0]), 6), round(float(pt[1]), 6)) for pt in ring if isinstance(pt, (list, tuple)) and len(pt) >= 2}
+    if len(pts) != 4:
+        return False
+    min_lon, min_lat, max_lon, max_lat = (round(float(v), 6) for v in bbox)
+    expected = {
+        (min_lon, min_lat),
+        (min_lon, max_lat),
+        (max_lon, min_lat),
+        (max_lon, max_lat),
+    }
+    return pts == expected
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -322,22 +349,28 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(400, {"error": "That property is too large. This check covers about 1 degree."})
             return
 
-        hit = cached_plot(bbox)
-        if hit is not None:
-            record_plot(hit, hit=True)
-            self._json(200, {"plot": hit.name, "cached": True})
-            return
-
         input_method = str(body.get("input_method") or ("upload" if geometry else "draw"))
+        rectangular = is_rectangle_geometry(geometry, bbox)
+        # Bbox cache is only safe for true rectangles — shapes/uploads must re-run.
+        if rectangular:
+            hit = cached_plot(bbox)
+            if hit is not None:
+                record_plot(hit, hit=True)
+                self._json(200, {"plot": hit.name, "cached": True})
+                return
+
         custom_name = body.get("name")
-        if input_method in ("draw", "draw_box", "draw_shape") and not custom_name:
+        lat = (bbox[1] + bbox[3]) / 2
+        lon = (bbox[0] + bbox[2]) / 2
+        coord = f"{lat:.3f}_{lon:.3f}".replace("-", "m").replace(".", "p")
+        if custom_name:
+            plot = PLOTS / f"{slug(str(custom_name))}_{coord}"
+        elif input_method in ("draw", "draw_box") and rectangular:
             plot = PLOTS / center_plot_id(bbox)
+        elif input_method == "draw_shape" or (geometry and not rectangular):
+            plot = PLOTS / f"shape_{coord}"
         else:
-            lat = (bbox[1] + bbox[3]) / 2
-            lon = (bbox[0] + bbox[2]) / 2
-            coord = f"{lat:.3f}_{lon:.3f}".replace("-", "m").replace(".", "p")
-            base = slug(str(custom_name or "property"))
-            plot = PLOTS / f"{base}_{coord}"
+            plot = PLOTS / f"{slug('property')}_{coord}"
         plot.mkdir(parents=True, exist_ok=True)
 
         submission = {
@@ -351,6 +384,7 @@ class Handler(SimpleHTTPRequestHandler):
         with (plot / "submission.json").open("w") as f:
             json.dump(submission, f, indent=2)
             f.write("\n")
+        geometry_path = None
         if geometry:
             feature = {
                 "type": "Feature",
@@ -359,13 +393,16 @@ class Handler(SimpleHTTPRequestHandler):
             }
             feature["properties"]["name"] = submission["name"]
             feature["properties"]["input_method"] = input_method
-            with (plot / "submission.geojson").open("w") as f:
+            geometry_path = plot / "submission.geojson"
+            with geometry_path.open("w") as f:
                 json.dump(feature, f, indent=2)
                 f.write("\n")
 
         bbox_arg = ",".join(str(v) for v in bbox)
         env = os.environ.copy()
         cmd = [str(PYTHON), "pipeline/analyze_fast.py", "--bbox", bbox_arg, "--out", str(plot)]
+        if geometry_path is not None and not rectangular:
+            cmd.extend(["--geometry", str(geometry_path)])
         run = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, timeout=180)
         if run.returncode != 0:
             detail = (run.stderr or run.stdout or "analysis failed").strip()[-800:]

@@ -1,7 +1,8 @@
-"""Fast rectangle check: gate on forest loss, then one 10.8 km video per cleared slice.
+"""Fast plot check: gate on forest loss, then one 10.8 km video per cleared slice.
 
 Usage:
     python pipeline/analyze_fast.py --bbox minLon,minLat,maxLon,maxLat --out data/plots/name
+    python pipeline/analyze_fast.py --bbox ... --geometry path/to/aoi.geojson --out ...
 """
 import os
 
@@ -22,14 +23,16 @@ import numpy as np
 import planetary_computer as pc
 import pystac_client
 import rasterio
-from PIL import Image, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 from perceptron import Client, video
 from rasterio.enums import Resampling
 from rasterio.transform import Affine, from_bounds
 from rasterio.warp import reproject, transform_bounds
-from shapely.geometry import box, shape
+from shapely.geometry import box, mapping, shape
+from shapely.ops import unary_union
 
 STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
+AOI_SLICE_COVER = 0.2
 KEY_FILE = os.path.expanduser("~/Desktop/perceptron-key.txt")
 YEARS = range(2020, 2027)
 PROMPT = (
@@ -371,6 +374,93 @@ def ground_slices(bbox, slice_km=SLICE_KM):
     return slices
 
 
+def _as_polygon_aoi(geom):
+    """Normalize and repair a geometry into a Polygon/MultiPolygon, or None."""
+    if geom is None or geom.is_empty:
+        return None
+    if not geom.is_valid:
+        geom = geom.buffer(0)
+    if geom.is_empty:
+        return None
+    if geom.geom_type == "GeometryCollection":
+        polys = [g for g in geom.geoms if g.geom_type in ("Polygon", "MultiPolygon") and not g.is_empty]
+        if not polys:
+            return None
+        geom = unary_union(polys)
+        if not geom.is_valid:
+            geom = geom.buffer(0)
+    if geom.geom_type not in ("Polygon", "MultiPolygon") or geom.is_empty:
+        return None
+    return geom
+
+
+def load_aoi(path):
+    """Load a Polygon/MultiPolygon AOI from a GeoJSON path, or None."""
+    if not path:
+        return None
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    geom = data
+    if isinstance(data, dict) and data.get("type") == "Feature":
+        geom = data.get("geometry")
+    elif isinstance(data, dict) and data.get("type") == "FeatureCollection":
+        parts = []
+        for feature in data.get("features") or []:
+            if isinstance(feature, dict) and feature.get("geometry"):
+                parts.append(shape(feature["geometry"]))
+        if not parts:
+            return None
+        return _as_polygon_aoi(unary_union(parts))
+    if not geom:
+        return None
+    return _as_polygon_aoi(shape(geom))
+
+
+def slice_cover(slice_bbox, aoi):
+    """Fraction of the slice rectangle covered by the AOI."""
+    if aoi is None:
+        return 1.0
+    piece = box(*slice_bbox)
+    area = piece.area
+    if area <= 0:
+        return 0.0
+    try:
+        return piece.intersection(aoi).area / area
+    except Exception:
+        fixed = _as_polygon_aoi(aoi)
+        if fixed is None:
+            return 0.0
+        return piece.intersection(fixed).area / area
+
+
+def aoi_pixel_mask(aoi, bbox, width, height):
+    """Rasterize the AOI into a float mask matching overview pixels."""
+    if aoi is None:
+        return None
+    img = Image.new("L", (width, height), 0)
+    draw = ImageDraw.Draw(img)
+    min_lon, min_lat, max_lon, max_lat = bbox
+    lon_span = max(max_lon - min_lon, 1e-9)
+    lat_span = max(max_lat - min_lat, 1e-9)
+
+    def to_px(lon, lat):
+        return (
+            (lon - min_lon) / lon_span * width,
+            (max_lat - lat) / lat_span * height,
+        )
+
+    polys = [aoi] if aoi.geom_type == "Polygon" else list(aoi.geoms)
+    for poly in polys:
+        exterior = [to_px(lon, lat) for lon, lat in poly.exterior.coords]
+        if len(exterior) >= 3:
+            draw.polygon(exterior, fill=255)
+        for hole in poly.interiors:
+            ring = [to_px(lon, lat) for lon, lat in hole.coords]
+            if len(ring) >= 3:
+                draw.polygon(ring, fill=0)
+    return (np.asarray(img, dtype=np.uint8) > 0).astype(np.float32)
+
+
 def pixel_window(slice_bbox, full_bbox, width, height):
     min_lon, min_lat, max_lon, max_lat = full_bbox
     lon_span = max(max_lon - min_lon, 1e-9)
@@ -493,12 +583,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--bbox", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--geometry", help="GeoJSON Feature/Polygon path; scores only inside this AOI")
     parser.add_argument("--perceptron-only", action="store_true")
     parser.add_argument("--no-perceptron", action="store_true")
     parser.add_argument("--no-forest", action="store_true")
     parser.add_argument("--no-loss", action="store_true")
     args = parser.parse_args()
     bbox = [float(v) for v in args.bbox.split(",")]
+    aoi = load_aoi(args.geometry)
     os.makedirs(args.out, exist_ok=True)
     use_perceptron = args.perceptron_only or not args.no_perceptron
     want_forest = not args.no_forest and not args.perceptron_only
@@ -551,12 +643,23 @@ def main():
 
     slices = ground_slices(bbox)
     gate = want_forest or want_loss
+    kept_slices = []
     for sl in slices:
+        cover = slice_cover(sl["bbox"], aoi)
+        sl["aoi_cover"] = round(cover, 3)
+        if aoi is not None and cover < AOI_SLICE_COVER:
+            continue
         sl["forest_share"] = round(slice_share(forest_mask, bbox, sl["bbox"]), 3) if gate else None
         sl["loss_share"] = round(slice_share(loss_mask, bbox, sl["bbox"]), 3) if gate else None
         sl["eligible"] = (not gate) or (sl["forest_share"] >= FOREST_MIN and sl["loss_share"] >= LOSS_MIN)
+        kept_slices.append(sl)
+    slices = kept_slices
     chosen = [sl for sl in slices if sl["eligible"]]
-    print(f"slices {len(slices)} eligible {len(chosen)}", flush=True)
+    print(
+        f"slices {len(slices)} eligible {len(chosen)}"
+        + (f" aoi_cover>={AOI_SLICE_COVER}" if aoi is not None else ""),
+        flush=True,
+    )
 
     def native_frames(sl):
         if overview_is_native:
@@ -607,18 +710,19 @@ def main():
                 make_video(crops, path)
                 score, raw, seconds = ask_video(path)
             print(json.dumps({"tile": i, "score": score, "seconds": seconds, "eligible": True}), flush=True)
-            box = pixel_window(sl["bbox"], bbox, width, height)
+            pix = pixel_window(sl["bbox"], bbox, width, height)
             return {
                 "id": i,
                 "row": sl["row"],
                 "col": sl["col"],
                 "score": score,
                 "seconds": seconds,
-                "box": list(box),
-                "polygon": ring(box, (width, height), bbox),
+                "box": list(pix),
+                "polygon": ring(pix, (width, height), bbox),
                 "raw": raw,
                 "loss_share": sl["loss_share"],
                 "forest_share": sl["forest_share"],
+                "aoi_cover": sl.get("aoi_cover"),
                 "eligible": True,
             }
 
@@ -629,32 +733,43 @@ def main():
     for sl in slices:
         if sl["eligible"]:
             continue
-        box = pixel_window(sl["bbox"], bbox, width, height)
+        pix = pixel_window(sl["bbox"], bbox, width, height)
         windows.append({
             "id": len(windows),
             "row": sl["row"],
             "col": sl["col"],
             "score": 0.0,
             "seconds": 0,
-            "box": list(box),
-            "polygon": ring(box, (width, height), bbox),
+            "box": list(pix),
+            "polygon": ring(pix, (width, height), bbox),
             "raw": "",
             "loss_share": sl["loss_share"],
             "forest_share": sl["forest_share"],
+            "aoi_cover": sl.get("aoi_cover"),
             "eligible": False,
         })
 
     loss_img = resize_mask(loss_mask, width, height) if loss_mask is not None else None
     forest_img = resize_mask(forest_mask, width, height) if forest_mask is not None else None
+    aoi_mask = aoi_pixel_mask(aoi, bbox, width, height)
     pixel_mask = None
     both_share = None
     if loss_img is not None and forest_img is not None:
-        both_share = round(float((loss_img & forest_img).mean()), 3)
+        both = loss_img & forest_img
+        if aoi_mask is not None:
+            both = both & (aoi_mask > 0)
+            denom = float(aoi_mask.sum()) or 1.0
+            both_share = round(float(both.sum()) / denom, 3)
+        else:
+            both_share = round(float(both.mean()), 3)
     maps_only = not use_perceptron
     if maps_only:
         if loss_img is None and forest_img is None:
             raise SystemExit(mask_error or "The forest and loss maps did not load.")
         image = paint_maps(forest_img, loss_img)
+        if aoi_mask is not None:
+            image = image.copy()
+            image[:, :, 3] = (image[:, :, 3].astype(np.float32) * aoi_mask).astype(np.uint8)
         if both_share is not None:
             mean_score = both_share
         elif loss_img is not None:
@@ -672,6 +787,8 @@ def main():
                 pixel_mask[top:bottom, left:right] *= loss_img[top:bottom, left:right]
             if forest_img is not None:
                 pixel_mask[top:bottom, left:right] *= forest_img[top:bottom, left:right]
+        if aoi_mask is not None:
+            pixel_mask *= aoi_mask
         scored = [(w.get("loss_share") or 0.0, w["score"]) for w in windows if w.get("eligible") and w["score"] is not None]
         weight = sum(share for share, _ in scored)
         mean_score = round(sum(share * score for share, score in scored) / weight, 3) if weight else 0.0
@@ -679,7 +796,7 @@ def main():
     else:
         scored = [w["score"] for w in windows if w["score"] is not None]
         mean_score = round(float(np.mean(scored)), 3) if scored else None
-        image = paint((width, height), [(w["box"], w["score"]) for w in windows], None)
+        image = paint((width, height), [(w["box"], w["score"]) for w in windows], aoi_mask)
 
     Image.fromarray(image).save(os.path.join(args.out, "confidence.png"))
     confidence = {
@@ -687,6 +804,7 @@ def main():
         "reasoning_effort": None if maps_only else "high",
         "prompt": None if maps_only else PROMPT,
         "gated": pixel_mask is not None,
+        "aoi": aoi is not None,
         "perceptron_only": use_perceptron and not want_forest and not want_loss,
         "maps_only": maps_only,
         "layers": [
@@ -707,6 +825,7 @@ def main():
         "lat": (bbox[1] + bbox[3]) / 2,
         "lon": (bbox[0] + bbox[2]) / 2,
         "bbox": bbox,
+        "geometry": mapping(aoi) if aoi is not None else None,
         "scenes": meta,
         "before": {k: meta[0][k] for k in ("date", "scene_id", "cloud_cover")},
         "after": {k: meta[-1][k] for k in ("date", "scene_id", "cloud_cover")},
