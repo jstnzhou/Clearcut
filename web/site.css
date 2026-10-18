@@ -39,7 +39,7 @@ a { color: inherit; }
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 14px;
   font-family: "Fraunces", Georgia, serif;
   font-size: 22px;
   font-weight: 540;
@@ -48,8 +48,8 @@ a { color: inherit; }
 }
 
 .brand .mark {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   flex: none;
   display: block;
 }

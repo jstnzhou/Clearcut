@@ -47,7 +47,7 @@ body.case {
 .running-brand {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 10px;
   color: var(--paper);
   text-decoration: none;
   font-family: "Fraunces", Georgia, serif;
@@ -58,8 +58,8 @@ body.case {
 }
 
 .running-brand .mark {
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   flex: none;
   display: block;
 }

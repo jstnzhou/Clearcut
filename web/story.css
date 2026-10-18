@@ -3,6 +3,8 @@
 body.story {
   background: var(--ink);
   color: var(--bone);
+  /* One text face. Fraunces is only the wordmark and the headlines. */
+  --mono: var(--sans);
 }
 
 ::selection { background: var(--loss); color: var(--bone); }
@@ -27,7 +29,7 @@ body.story {
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 14px;
   font-family: var(--serif);
   font-size: 21px;
   font-weight: 540;
@@ -36,8 +38,8 @@ body.story {
 }
 
 .wordmark .mark {
-  width: 22px;
-  height: 22px;
+  width: 36px;
+  height: 36px;
   flex: none;
   display: block;
 }
@@ -133,8 +135,8 @@ body.story {
 }
 
 .hero h1 em {
-  font-style: italic;
-  font-weight: 340;
+  font-style: normal;
+  font-weight: 380;
   color: var(--moss-soft);
 }
 
@@ -324,8 +326,6 @@ body.story {
 
 .callout[data-for="river"] { left: 9%; top: 22%; }
 .callout[data-for="roads"] { right: 22%; top: 63.4%; }
-.callout[data-for="smoke"] { left: 56%; top: 34%; }
-
 .callout.on { opacity: 1; transform: none; }
 
 .hud {
@@ -453,7 +453,7 @@ body.story {
   margin: 0 0 12px;
 }
 
-.step q { font-style: italic; color: var(--bone); }
+.step q { font-style: normal; color: var(--bone); }
 
 .region-list {
   list-style: none;
@@ -584,7 +584,7 @@ body.story {
 }
 
 .ledger-col { background: var(--ink); padding: 30px clamp(20px, 3vw, 40px) 34px; }
-.ledger-col h3 { font-family: var(--mono); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 18px; }
+.ledger-col h3 { font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 18px; }
 .ledger-col.says h3 { color: var(--moss-soft); }
 .ledger-col.never h3 { color: #ff8a6e; }
 .ledger ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
@@ -607,7 +607,7 @@ body.story {
 
 .source-list { margin: 0; display: grid; border-top: 1px solid var(--line-dark); }
 .source-list div { display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line-dark); }
-.source-list dt { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(246, 244, 236, 0.5); padding-top: 3px; }
+.source-list dt { font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(246, 244, 236, 0.5); padding-top: 3px; }
 .source-list dd { margin: 0; font-size: 16px; }
 
 .foot {

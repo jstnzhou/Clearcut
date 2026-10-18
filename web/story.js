@@ -60,7 +60,7 @@
     2019: { year: 2019, loss: 0, callouts: ["river"], meter: 0 },
     cutoff: { year: 2020, loss: 0, callouts: [], stamp: true, meter: 0 },
     loss: { year: 2023, loss: 1, grow: true, callouts: [], meter: 1 },
-    2026: { year: 2026, loss: 0.38, callouts: ["roads", "smoke"], meter: 1 },
+    2026: { year: 2026, loss: 0.38, callouts: ["roads"], meter: 1 },
     regions: { year: 2026, loss: 0, regions: true, callouts: [], meter: 1 },
     verdict: { year: 2026, loss: 0, regions: true, callouts: [], meter: 1 }
   };
