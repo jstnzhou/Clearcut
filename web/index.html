@@ -15,11 +15,14 @@
       <h1>Clearcut</h1>
       <p class="tagline">For social good.</p>
       <p class="sub">An official check on a plantation submission. The government approves. Clearcut shows the record.</p>
+      <div class="header-actions">
+        <button type="button" id="open-board">Investigation board</button>
+      </div>
     </header>
 
     <section id="view-submission">
-      <p class="plot-name">Plot KS-19, a fictional plantation.</p>
-      <p class="coords">Coordinates -0.78, 110.08.</p>
+      <p class="plot-name" id="plot-name">Plot KS-19, a fictional plantation.</p>
+      <p class="coords" id="plot-coords">Coordinates -0.78, 110.08.</p>
       <p id="status" hidden></p>
       <div id="finding"></div>
       <h2>Selected chip</h2>
@@ -79,6 +82,20 @@
     </ul>
   </aside>
 
+  <dialog id="board-dialog" class="board-dialog">
+    <div class="board-dialog-head">
+      <div>
+        <h1>Investigation board</h1>
+        <p class="hint">Highest conversion scores first. Those plots are the least trusted and should be reviewed next.</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="close-board">Close</button>
+      </div>
+    </div>
+    <p id="board-dialog-note" class="hint"></p>
+    <div id="board-dialog-list"></div>
+  </dialog>
+
   <div id="tools">
     <button id="tool-pan" type="button">Pan</button>
     <button id="tool-box" type="button" class="active">Draw box</button>
@@ -93,6 +110,7 @@
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="board.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

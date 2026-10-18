@@ -283,3 +283,122 @@ input[type="range"] {
 .maplibregl-ctrl-attrib a {
   color: #eceae4;
 }
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.header-actions button,
+#close-board {
+  background: #1c2024;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.header-actions button:hover,
+#close-board:hover {
+  background: #2a3036;
+}
+
+.text-link {
+  align-self: center;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.board-page {
+  overflow: auto;
+}
+
+.board-shell {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow a {
+  color: var(--muted);
+}
+
+.board-dialog {
+  width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 20px;
+  background: #14171a;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.board-dialog::backdrop {
+  background: rgba(8, 9, 10, 0.72);
+}
+
+.board-dialog-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.board-dialog h1 {
+  font-size: 22px;
+}
+
+.board-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.board-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a958c;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.board-table td {
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.board-name {
+  font-weight: 600;
+}
+
+.board-coords {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.board-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.board-table tr.flag-high .board-score { color: #e07470; }
+.board-table tr.flag-mid .board-score { color: #d4b15a; }
+.board-table tr.flag-low .board-score { color: #6fbf8b; }
+
+.board-table button {
+  padding: 6px 10px;
+  background: #eceae4;
+  color: #16181b;
+}
