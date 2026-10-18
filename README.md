@@ -39,6 +39,16 @@ The loss map ends in 2024, so the 2026 image is evidence of what the land looks 
 
 On this submission, Clearcut's result is that the plot does not support approval.
 
+## Property intake
+
+On the map (`web/`), submit a plot by drawing a box **or** uploading / pasting a boundary:
+
+- **GeoJSON** (`.geojson` / `.json`)
+- **KML** (`.kml`)
+- **GPX** closed boundary walk (`.gpx`)
+
+Sample files live in `data/samples/`. Analyze still runs on the property bounding box and writes `submission.json` + `submission.geojson` into the plot folder.
+
 ## In this repository
 
 The check for that plot is produced by three steps:

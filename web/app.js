@@ -32,6 +32,11 @@ const sceneDate = document.getElementById("scene-date");
 const timeInput = document.getElementById("time");
 const flyNote = document.getElementById("fly-note");
 const analyzeNote = document.getElementById("analyze-note");
+const intakeNote = document.getElementById("intake-note");
+const intakeFileName = document.getElementById("intake-file-name");
+const intakeFeatureBox = document.getElementById("intake-features");
+const intakeFeatureList = document.getElementById("intake-feature-list");
+const intakeSelected = document.getElementById("intake-selected");
 
 const state = {
   plotUrl: "",
@@ -45,6 +50,12 @@ const state = {
   drawing: false,
   dragStart: null,
   draftBbox: null,
+  draftGeometry: null,
+  draftFeature: null,
+  intakeMethod: "draw",
+  intakeFilename: null,
+  intakeItems: [],
+  intakeSelectedId: null,
   confidence: null,
   suppressClick: false,
   mapReady: false
@@ -500,10 +511,15 @@ function showSubmission(animate) {
   );
 }
 
-function showUnknown(feature, bbox) {
+function showUnknown(feature, bbox, options) {
+  const opts = options || {};
   state.showingSubmission = false;
   state.selectedId = null;
   state.draftBbox = bbox;
+  state.draftFeature = feature || null;
+  state.draftGeometry = feature && feature.geometry ? feature.geometry : null;
+  state.intakeMethod = opts.inputMethod || "draw";
+  if (opts.filename) state.intakeFilename = opts.filename;
   setDraft(feature);
   if (state.mapReady && map.getLayer("scene")) {
     map.setLayoutProperty("scene", "visibility", "none");
@@ -511,6 +527,86 @@ function showUnknown(feature, bbox) {
   applyChips();
   renderPanel();
   analyzeNote.textContent = "";
+  updateIntakeSelected();
+  if (bbox && map) {
+    map.fitBounds(
+      [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
+      { padding: fitPadding(), maxZoom: 13, duration: 700 }
+    );
+  }
+}
+
+function updateIntakeSelected() {
+  if (!intakeSelected) return;
+  const item = state.intakeItems.find(function (row) { return row.id === state.intakeSelectedId; });
+  if (!item) {
+    intakeSelected.hidden = true;
+    return;
+  }
+  intakeSelected.hidden = false;
+  document.getElementById("intake-selected-name").textContent = item.label;
+  document.getElementById("intake-selected-source").textContent =
+    (state.intakeFilename || state.intakeMethod || "upload") + " · " + state.intakeMethod;
+}
+
+function renderIntakeFeatures(items) {
+  state.intakeItems = items || [];
+  if (!intakeFeatureBox || !intakeFeatureList) return;
+  intakeFeatureList.replaceChildren();
+  if (!state.intakeItems.length) {
+    intakeFeatureBox.hidden = true;
+    state.intakeSelectedId = null;
+    updateIntakeSelected();
+    return;
+  }
+  intakeFeatureBox.hidden = false;
+  state.intakeItems.forEach(function (item) {
+    const li = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = item.label;
+    button.className = item.id === state.intakeSelectedId ? "active" : "";
+    button.addEventListener("click", function () { selectIntakeItem(item.id); });
+    li.append(button);
+    intakeFeatureList.append(li);
+  });
+  if (state.intakeSelectedId == null) selectIntakeItem(state.intakeItems[0].id);
+  else updateIntakeSelected();
+}
+
+function selectIntakeItem(id) {
+  const item = state.intakeItems.find(function (row) { return row.id === id; });
+  if (!item) return;
+  const error = window.ClearcutIntake.validateBBox(item.bbox);
+  if (error) {
+    intakeNote.textContent = error;
+    return;
+  }
+  state.intakeSelectedId = id;
+  intakeNote.textContent = "Selected “" + item.label + "”. Analyze when ready.";
+  renderIntakeFeatures(state.intakeItems);
+  showUnknown(item.feature, item.bbox.slice(), {
+    inputMethod: state.intakeMethod,
+    filename: state.intakeFilename
+  });
+}
+
+async function ingestParsed(parsed) {
+  state.intakeMethod = parsed.method;
+  state.intakeFilename = parsed.filename || null;
+  if (intakeFileName) intakeFileName.textContent = parsed.filename || "";
+  state.intakeSelectedId = null;
+  renderIntakeFeatures(parsed.items);
+}
+
+async function loadSampleProperty() {
+  intakeNote.textContent = "Loading sample GeoJSON…";
+  const response = await fetch("/data/samples/kalbar_property.geojson");
+  if (!response.ok) throw new Error("Sample property file missing.");
+  const text = await response.text();
+  const items = window.ClearcutIntake.normalizeGeoJSON(text);
+  await ingestParsed({ method: "sample_geojson", items: items, filename: "kalbar_property.geojson" });
+  intakeNote.textContent = "Sample West Kalimantan plot loaded.";
 }
 
 function selectChip(id) {
@@ -697,7 +793,12 @@ window.addEventListener("mouseup", function (event) {
     return;
   }
   state.suppressClick = true;
-  showUnknown(box.feature, box.bbox);
+  state.intakeItems = [];
+  state.intakeSelectedId = null;
+  state.intakeFilename = null;
+  if (intakeFeatureBox) intakeFeatureBox.hidden = true;
+  if (intakeFileName) intakeFileName.textContent = "";
+  showUnknown(box.feature, box.bbox, { inputMethod: "draw" });
 });
 
 map.on("click", function (event) {
@@ -733,19 +834,33 @@ document.getElementById("tool-box").addEventListener("click", function () { setD
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
   if (!state.draftBbox) return;
+  const boundsError = window.ClearcutIntake && window.ClearcutIntake.validateBBox(state.draftBbox);
+  if (boundsError) {
+    analyzeNote.textContent = boundsError;
+    return;
+  }
   button.disabled = true;
   analyzeNote.textContent = "Fetching the years and scoring the tiles.";
+  const selected = state.intakeItems.find(function (row) { return row.id === state.intakeSelectedId; });
+  const payload = {
+    bbox: state.draftBbox,
+    geometry: state.draftGeometry,
+    input_method: state.intakeMethod || "draw",
+    source_filename: state.intakeFilename,
+    name: selected ? selected.label : undefined,
+    properties: selected ? selected.properties : {}
+  };
   fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bbox: state.draftBbox })
+    body: JSON.stringify(payload)
   }).then(function (response) {
-    return response.json().then(function (payload) {
-      if (!response.ok) throw new Error(payload.error || "Analysis failed");
-      return payload;
+    return response.json().then(function (body) {
+      if (!response.ok) throw new Error(body.error || "Analysis failed");
+      return body;
     });
-  }).then(function (payload) {
-    state.plotUrl = "../data/plots/" + payload.plot;
+  }).then(function (body) {
+    state.plotUrl = "../data/plots/" + body.plot;
     return loadPlot();
   }).then(function () {
     analyzeNote.textContent = "";
@@ -754,6 +869,37 @@ document.getElementById("analyze").addEventListener("click", function () {
     analyzeNote.textContent = error.message || "Analysis failed";
   }).finally(function () {
     button.disabled = false;
+  });
+});
+
+document.getElementById("intake-file").addEventListener("change", function (event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  intakeNote.textContent = "Reading " + file.name + "…";
+  window.ClearcutIntake.parseUpload(file).then(function (parsed) {
+    return ingestParsed(parsed);
+  }).then(function () {
+    intakeNote.textContent = "Loaded " + file.name + ". Select a feature if needed, then analyze.";
+  }).catch(function (error) {
+    intakeNote.textContent = error.message || "Could not read that file.";
+  });
+});
+
+document.getElementById("intake-paste-btn").addEventListener("click", function () {
+  const text = document.getElementById("intake-paste").value;
+  intakeNote.textContent = "Parsing GeoJSON…";
+  window.ClearcutIntake.parsePaste(text).then(function (parsed) {
+    return ingestParsed(parsed);
+  }).then(function () {
+    intakeNote.textContent = "Pasted GeoJSON ready. Analyze when ready.";
+  }).catch(function (error) {
+    intakeNote.textContent = error.message || "Could not parse that GeoJSON.";
+  });
+});
+
+document.getElementById("intake-sample").addEventListener("click", function () {
+  loadSampleProperty().catch(function (error) {
+    intakeNote.textContent = error.message || "Could not load sample.";
   });
 });
 

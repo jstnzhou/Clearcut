@@ -39,9 +39,37 @@
     </section>
 
     <section id="view-unknown">
-      <p class="unknown-copy">Draw a rectangle on the map, then analyze it.</p>
+      <p class="unknown-copy">Draw a rectangle, or submit a property boundary.</p>
       <button id="analyze" type="button">Analyze this area</button>
       <p id="analyze-note" class="hint"></p>
+    </section>
+
+    <section id="intake" class="intake">
+      <h2>Property intake</h2>
+      <p class="hint">Upload or paste a plot boundary. GeoJSON, KML, or GPX (closed walk).</p>
+      <label class="file-button">
+        Choose file
+        <input id="intake-file" type="file" accept=".geojson,.json,.kml,.gpx,application/geo+json,application/json,application/vnd.google-earth.kml+xml">
+      </label>
+      <p id="intake-file-name" class="hint"></p>
+      <label class="stack-label">Paste GeoJSON
+        <textarea id="intake-paste" rows="4" spellcheck="false" placeholder='{"type":"Polygon","coordinates":[[[...]]]}'></textarea>
+      </label>
+      <div class="intake-actions">
+        <button id="intake-paste-btn" type="button">Use pasted GeoJSON</button>
+        <button id="intake-sample" type="button" class="ghost">Load sample plot</button>
+      </div>
+      <p id="intake-note" class="hint"></p>
+      <div id="intake-features" class="intake-features" hidden>
+        <h3>Select a feature</h3>
+        <ul id="intake-feature-list"></ul>
+      </div>
+      <dl id="intake-selected" class="intake-selected" hidden>
+        <dt>Selected</dt>
+        <dd id="intake-selected-name"></dd>
+        <dt>Source</dt>
+        <dd id="intake-selected-source"></dd>
+      </dl>
     </section>
 
     <h2>Fly to</h2>
@@ -80,6 +108,7 @@
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="intake.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
