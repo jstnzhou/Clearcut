@@ -8,12 +8,14 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
+import unicodedata
 from datetime import datetime, timezone
 
 import numpy as np
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = ROOT / ".venv" / "bin" / "python"
@@ -21,6 +23,7 @@ if not PYTHON.is_file():
     PYTHON = Path(sys.executable)
 PORT = 8765
 PLOTS = ROOT / "data" / "plots"
+COMPANIES = ROOT / "data" / "companies"
 INDEX = ROOT / "data" / "leaderboard.json"
 NEAR_IOU = 0.6
 
@@ -277,6 +280,117 @@ def slug(text: str) -> str:
     return cleaned[:48] or "plot"
 
 
+def find_uml_workbook():
+    candidates = []
+    env = os.environ.get("UML_XLSX")
+    if env:
+        candidates.append(Path(env).expanduser())
+    candidates.append(ROOT / "data" / "UML.xlsx")
+    candidates.append(Path.home() / "Downloads" / "UML.xlsx")
+    for path in candidates:
+        if path.is_file():
+            return path
+    return None
+
+
+def company_slug(text):
+    text = unicodedata.normalize("NFKD", text or "")
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    cleaned = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return cleaned[:48] or "company"
+
+
+def _company_file(company_id):
+    if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?", company_id or ""):
+        return None
+    return COMPANIES / f"{company_id}.json"
+
+
+def list_companies():
+    if not COMPANIES.is_dir():
+        return []
+    rows = []
+    for path in sorted(COMPANIES.glob("*.json")):
+        data = _read_json(path)
+        if isinstance(data, dict) and data.get("id") and isinstance(data.get("farms"), list):
+            rows.append(data)
+    rows.sort(key=lambda row: (row.get("name") or "").lower())
+    return rows
+
+
+def save_company(data):
+    path = _company_file(data.get("id"))
+    if path is None:
+        raise ValueError("Invalid company id.")
+    COMPANIES.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return data
+
+
+def import_company_pdf(pdf_bytes, filename):
+    uml = find_uml_workbook()
+    if uml is None:
+        raise ValueError("UML.xlsx was not found. Put it in Downloads or data/UML.xlsx.")
+    filename = Path(filename or "upload.pdf").name
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    try:
+        tmp.write(pdf_bytes)
+        tmp.close()
+        run = subprocess.run(
+            [str(PYTHON), str(ROOT / "web" / "pdf_mills.py"), "parse", tmp.name, str(uml), filename],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+    finally:
+        Path(tmp.name).unlink(missing_ok=True)
+    if run.returncode != 0:
+        detail = (run.stderr or run.stdout or "Could not read that PDF.").strip().splitlines()
+        raise ValueError(detail[-1][:500] if detail else "Could not read that PDF.")
+    try:
+        parsed = json.loads(run.stdout)
+    except json.JSONDecodeError as exc:
+        raise ValueError("The PDF parser returned invalid data.") from exc
+    name = str(parsed.get("company") or "Company").strip()[:80] or "Company"
+    company_id = company_slug(name)
+    existing_path = _company_file(company_id)
+    existing = _read_json(existing_path) if existing_path and existing_path.is_file() else None
+    if not isinstance(existing, dict):
+        existing = None
+    display = existing.get("name") if existing and existing.get("renamed") else name
+    farms = parsed.get("farms") or []
+    record = {
+        "id": company_id,
+        "name": display or name,
+        "renamed": bool(existing and existing.get("renamed")),
+        "source_filename": filename,
+        "created": (existing or {}).get("created") or _utc_now(),
+        "updated": _utc_now(),
+        "mill_count": parsed.get("mill_count") or len(farms),
+        "resolved_count": parsed.get("resolved_count") or 0,
+        "unresolved_count": parsed.get("unresolved_count") or 0,
+        "farms": farms,
+    }
+    return save_company(record)
+
+
+def rename_company(company_id, name):
+    path = _company_file(str(company_id or ""))
+    if path is None or not path.is_file():
+        raise ValueError("That company was not found.")
+    data = _read_json(path)
+    if not isinstance(data, dict):
+        raise ValueError("That company file is unreadable.")
+    cleaned = re.sub(r"\s+", " ", (name or "").strip())
+    if not cleaned:
+        raise ValueError("The company name cannot be empty.")
+    data["name"] = cleaned[:80]
+    data["renamed"] = True
+    data["updated"] = _utc_now()
+    return save_company(data)
+
+
 def is_rectangle_geometry(geometry, bbox):
     """True when geometry is missing or is essentially the axis-aligned bbox."""
     if not isinstance(geometry, dict):
@@ -317,10 +431,20 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/leaderboard":
             self._json(200, leaderboard())
             return
+        if parsed.path == "/api/companies":
+            self._json(200, {"companies": list_companies()})
+            return
         super().do_GET()
 
     def do_POST(self):
-        if urlparse(self.path).path != "/api/analyze":
+        path = urlparse(self.path).path
+        if path == "/api/companies/import":
+            self._import_pdf()
+            return
+        if path == "/api/companies/rename":
+            self._rename_company_request()
+            return
+        if path != "/api/analyze":
             self.send_error(404)
             return
         length = int(self.headers.get("Content-Length", 0))
@@ -417,6 +541,51 @@ class Handler(SimpleHTTPRequestHandler):
             "input_method": input_method,
             "submission": f"/data/plots/{plot.name}/submission.json",
         })
+
+    def _read_body(self, limit):
+        try:
+            length = int(self.headers.get("Content-Length", 0) or 0)
+        except ValueError:
+            return None
+        if length <= 0 or length > limit:
+            return None
+        return self.rfile.read(length)
+
+    def _import_pdf(self):
+        raw = self._read_body(40_000_000)
+        if not raw:
+            self._json(400, {"error": "Upload a PDF."})
+            return
+        filename = unquote(self.headers.get("X-Filename") or "upload.pdf")
+        try:
+            record = import_company_pdf(raw, filename)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
+        except subprocess.TimeoutExpired:
+            self._json(500, {"error": "Reading that PDF took too long."})
+            return
+        self._json(200, {
+            "id": record["id"],
+            "name": record["name"],
+            "mill_count": record["mill_count"],
+            "resolved_count": record["resolved_count"],
+            "unresolved_count": record["unresolved_count"],
+        })
+
+    def _rename_company_request(self):
+        raw = self._read_body(100_000)
+        try:
+            body = json.loads(raw or b"{}")
+        except json.JSONDecodeError:
+            self._json(400, {"error": "Send JSON with id and name."})
+            return
+        try:
+            record = rename_company(str(body.get("id") or ""), str(body.get("name") or ""))
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
+        self._json(200, {"id": record["id"], "name": record["name"]})
 
     def _json(self, code, payload):
         raw = json.dumps(payload).encode()

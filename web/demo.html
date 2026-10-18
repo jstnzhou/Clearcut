@@ -59,10 +59,10 @@
 
     <section id="intake" class="intake">
       <h2>Or bring a file</h2>
-      <p class="hint">GeoJSON, KML, or GPX. You can also paste a polygon.</p>
+      <p class="hint">GeoJSON, KML, GPX, or a mill-list PDF. You can also paste a polygon.</p>
       <label class="file-button">
         Choose file
-        <input id="intake-file" type="file" accept=".geojson,.json,.kml,.gpx,application/geo+json,application/json,application/vnd.google-earth.kml+xml">
+        <input id="intake-file" type="file" accept=".geojson,.json,.kml,.gpx,.pdf,application/geo+json,application/json,application/vnd.google-earth.kml+xml,application/pdf">
       </label>
       <p id="intake-file-name" class="hint"></p>
       <label class="stack-label">Paste GeoJSON
@@ -82,6 +82,13 @@
         <dt>Source</dt>
         <dd id="intake-selected-source"></dd>
       </dl>
+    </section>
+
+    <section id="companies" class="companies">
+      <h2>Companies</h2>
+      <p class="hint">Folders from mill-list PDFs. Rename a company in place. Click a mill to load its outline. The check starts only from Check this plot.</p>
+      <p id="companies-empty" class="hint">No companies yet.</p>
+      <ul id="company-list"></ul>
     </section>
 
     <form id="fly-form">
@@ -120,7 +127,7 @@
       </svg>
       <span class="mode-label">Shape</span>
     </button>
-    <button id="tool-upload" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Upload boundary" title="Upload GeoJSON, KML, or GPX">
+    <button id="tool-upload" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Upload boundary" title="Upload GeoJSON, KML, GPX, or a mill-list PDF">
       <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 16V5"></path>
         <path d="m8 9 4-4 4 4"></path>

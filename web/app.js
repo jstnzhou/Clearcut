@@ -61,6 +61,12 @@ const state = {
   intakeFilename: null,
   intakeItems: [],
   intakeSelectedId: null,
+  draftName: null,
+  draftProperties: null,
+  companies: [],
+  openCompanies: {},
+  farmFilters: {},
+  selectedFarmId: null,
   confidence: null,
   suppressClick: false,
   mapReady: false,
@@ -757,6 +763,9 @@ function showUnknown(feature, bbox, options) {
   state.draftBbox = bbox;
   state.draftFeature = feature || null;
   state.draftGeometry = feature && feature.geometry ? feature.geometry : null;
+  state.draftName = opts.name || null;
+  state.draftProperties = opts.properties || null;
+  if (!opts.keepFarm) state.selectedFarmId = null;
   state.intakeMethod = opts.inputMethod || "draw";
   if (opts.filename) state.intakeFilename = opts.filename;
   setDraft(feature);
@@ -1367,8 +1376,8 @@ document.getElementById("analyze").addEventListener("click", function () {
     geometry: state.draftGeometry,
     input_method: state.intakeMethod || "draw",
     source_filename: state.intakeFilename,
-    name: selected ? selected.label : undefined,
-    properties: selected ? selected.properties : {}
+    name: state.draftName || (selected ? selected.label : undefined),
+    properties: Object.assign({}, selected ? selected.properties : {}, state.draftProperties || {})
   };
   fetch("/api/analyze", {
     method: "POST",
@@ -1405,6 +1414,12 @@ document.getElementById("analyze").addEventListener("click", function () {
 document.getElementById("intake-file").addEventListener("change", function (event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
+  const lower = file.name.toLowerCase();
+  if (lower.endsWith(".pdf") || file.type === "application/pdf") {
+    event.target.value = "";
+    importCompanyPdf(file);
+    return;
+  }
   intakeNote.textContent = "Reading " + file.name + "…";
   window.ClearcutIntake.parseUpload(file).then(function (parsed) {
     return ingestParsed(parsed);
@@ -1533,3 +1548,213 @@ function loadPlot() {
     renderPanel();
   });
 }
+
+const companyList = document.getElementById("company-list");
+const companiesEmpty = document.getElementById("companies-empty");
+
+function farmLabel(farm) {
+  const parts = [farm.name || "Mill"];
+  if (farm.country) parts.push(farm.country);
+  if (farm.uml_id) parts.push(farm.uml_id);
+  if (!farm.resolved) parts.push("no coordinates");
+  return parts.join(" · ");
+}
+
+function renderFarmList(list, company) {
+  list.replaceChildren();
+  const query = (state.farmFilters[company.id] || "").trim().toLowerCase();
+  const farms = (company.farms || []).filter(function (farm) {
+    if (!query) return true;
+    const hay = [farm.name, farm.country, farm.uml_id, farm.mill_company, farm.supplier].join(" ").toLowerCase();
+    return hay.indexOf(query) !== -1;
+  });
+  if (!farms.length) {
+    const empty = document.createElement("li");
+    empty.className = "farm-more";
+    empty.textContent = query ? "No mills match." : "No mills in this folder.";
+    list.append(empty);
+    return;
+  }
+  farms.forEach(function (farm) {
+    const li = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = farmLabel(farm);
+    if (!farm.resolved) button.classList.add("unresolved");
+    if (state.selectedFarmId === company.id + ":" + farm.id) button.classList.add("active");
+    button.addEventListener("click", function () { selectCompanyFarm(company, farm); });
+    li.append(button);
+    list.append(li);
+  });
+}
+
+function renderCompanies() {
+  if (!companyList) return;
+  const focus = document.activeElement;
+  const restoreFilter = focus && focus.classList && focus.classList.contains("farm-filter") ? focus.dataset.companyId : null;
+  const restoreName = focus && focus.classList && focus.classList.contains("company-name") ? focus.dataset.companyId : null;
+  companyList.replaceChildren();
+  if (companiesEmpty) companiesEmpty.hidden = state.companies.length > 0;
+  state.companies.forEach(function (company) {
+    const item = document.createElement("li");
+    item.className = "company";
+    const row = document.createElement("div");
+    row.className = "company-row";
+    const open = !!state.openCompanies[company.id];
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "company-toggle";
+    toggle.textContent = open ? "▾" : "▸";
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.setAttribute("aria-label", (open ? "Collapse " : "Expand ") + (company.name || "company"));
+    toggle.addEventListener("click", function () {
+      state.openCompanies[company.id] = !state.openCompanies[company.id];
+      renderCompanies();
+    });
+    const name = document.createElement("input");
+    name.type = "text";
+    name.className = "company-name";
+    name.value = company.name || "";
+    name.dataset.companyId = company.id;
+    name.setAttribute("aria-label", "Company name");
+    name.addEventListener("change", function () { renameCompany(company, name.value); });
+    name.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        name.blur();
+      }
+    });
+    const count = document.createElement("span");
+    count.className = "company-count";
+    count.textContent = String((company.farms || []).length);
+    row.append(toggle, name, count);
+    item.append(row);
+    if (open) {
+      const filter = document.createElement("input");
+      filter.type = "search";
+      filter.className = "farm-filter";
+      filter.placeholder = "Filter mills";
+      filter.value = state.farmFilters[company.id] || "";
+      filter.dataset.companyId = company.id;
+      filter.setAttribute("aria-label", "Filter mills in " + (company.name || "company"));
+      const farms = document.createElement("ul");
+      farms.className = "farm-list";
+      filter.addEventListener("input", function () {
+        state.farmFilters[company.id] = filter.value;
+        renderFarmList(farms, company);
+      });
+      renderFarmList(farms, company);
+      item.append(filter, farms);
+    }
+    companyList.append(item);
+  });
+  if (restoreFilter) {
+    const next = companyList.querySelector('.farm-filter[data-company-id="' + restoreFilter + '"]');
+    if (next) {
+      next.focus();
+      const length = next.value.length;
+      if (next.setSelectionRange) next.setSelectionRange(length, length);
+    }
+  } else if (restoreName) {
+    const next = companyList.querySelector('.company-name[data-company-id="' + restoreName + '"]');
+    if (next) next.focus();
+  }
+}
+
+function loadCompanies() {
+  return fetchJson("/api/companies").then(function (result) {
+    state.companies = result.ok && result.data && Array.isArray(result.data.companies)
+      ? result.data.companies
+      : [];
+    renderCompanies();
+  });
+}
+
+function renameCompany(company, name) {
+  const next = String(name || "").trim();
+  if (!next || next === company.name) {
+    renderCompanies();
+    return;
+  }
+  fetch("/api/companies/rename", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: company.id, name: next })
+  }).then(function (response) {
+    return response.json().then(function (body) {
+      if (!response.ok) throw new Error(body.error || "Could not rename that company.");
+      return body;
+    });
+  }).then(function (body) {
+    company.name = body.name || next;
+    if (intakeNote) intakeNote.textContent = "Renamed the folder to " + company.name + ".";
+    renderCompanies();
+  }).catch(function (error) {
+    if (intakeNote) intakeNote.textContent = error.message || "Could not rename that company.";
+    renderCompanies();
+  });
+}
+
+function selectCompanyFarm(company, farm) {
+  state.selectedFarmId = company.id + ":" + farm.id;
+  renderCompanies();
+  if (!farm.resolved || !farm.geometry || !farm.bbox) {
+    if (intakeNote) {
+      intakeNote.textContent = (farm.name || "That mill") + (farm.uml_id ? " (" + farm.uml_id + ")" : "") + " has no coordinates in the mill list.";
+    }
+    return;
+  }
+  const feature = {
+    type: "Feature",
+    properties: {
+      name: farm.name,
+      uml_id: farm.uml_id || "",
+      company: company.name
+    },
+    geometry: farm.geometry
+  };
+  state.intakeMethod = "upload_pdf";
+  state.intakeFilename = company.source_filename || null;
+  state.intakeSelectedId = null;
+  if (intakeFileName) intakeFileName.textContent = company.source_filename || "";
+  renderIntakeFeatures([]);
+  showUnknown(feature, farm.bbox.slice(), {
+    inputMethod: "upload_pdf",
+    filename: company.source_filename,
+    name: farm.name,
+    properties: feature.properties,
+    keepFarm: true
+  });
+  if (intakeNote) intakeNote.textContent = "Loaded " + farm.name + ". Press Check this plot to run it.";
+}
+
+function importCompanyPdf(file) {
+  if (intakeNote) intakeNote.textContent = "Reading mills from " + file.name + "…";
+  file.arrayBuffer().then(function (buffer) {
+    return fetch("/api/companies/import", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/pdf",
+        "X-Filename": encodeURIComponent(file.name)
+      },
+      body: buffer
+    });
+  }).then(function (response) {
+    return response.json().then(function (body) {
+      if (!response.ok) throw new Error(body.error || "Could not read that PDF.");
+      return body;
+    });
+  }).then(function (body) {
+    state.openCompanies[body.id] = true;
+    let note = "Saved " + (body.mill_count || 0) + " mills under " + body.name + ".";
+    if (body.unresolved_count) note += " " + body.unresolved_count + " had no coordinates.";
+    note += " Click a mill to load it. Analysis does not start on its own.";
+    if (intakeNote) intakeNote.textContent = note;
+    if (intakeFileName) intakeFileName.textContent = file.name;
+    return loadCompanies();
+  }).catch(function (error) {
+    if (intakeNote) intakeNote.textContent = error.message || "Could not read that PDF.";
+  });
+}
+
+loadCompanies();
