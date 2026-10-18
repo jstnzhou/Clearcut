@@ -242,9 +242,18 @@ button:hover {
   border-top: 1px solid var(--line);
 }
 
-#scene-date {
-  min-width: 118px;
-  font-weight: 600;
+#overlay-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 168px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+#overlay {
+  flex: 0 0 96px;
+  width: 96px;
 }
 
 input[type="range"] {

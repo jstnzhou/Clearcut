@@ -1,0 +1,173 @@
+{
+  "model": "perceptron-mk1.5",
+  "reasoning_effort": "high",
+  "prompt": "This video is one frame per year of the same land, from 2020 onward, in order, about one frame per second. Reply with one number from 0.0 to 1.0 and nothing else. The number is your confidence that forest in the early frames was converted to plantation by the later frames: rectangular blocks, straight access roads, or planting rows. 0.0 means still forest or no conversion. 1.0 means a clear plantation conversion. Use a value in between when only part of the tile changed or you are unsure.",
+  "gated": true,
+  "mean_score": 0.0,
+  "windows": [
+    {
+      "id": 0,
+      "row": 0,
+      "col": 0,
+      "score": 0.0,
+      "seconds": 3.28,
+      "box": [
+        0,
+        0,
+        175,
+        144
+      ],
+      "polygon": [
+        [
+          -122.44272723910731,
+          47.67330744465093
+        ],
+        [
+          -122.41953775128044,
+          47.67330744465093
+        ],
+        [
+          -122.41953775128044,
+          47.660483850470385
+        ],
+        [
+          -122.44272723910731,
+          47.660483850470385
+        ],
+        [
+          -122.44272723910731,
+          47.67330744465093
+        ]
+      ],
+      "raw": "0.0",
+      "loss_share": 0.0,
+      "forest_share": 0.131,
+      "eligible": false,
+      "score_raw": 0.0
+    },
+    {
+      "id": 1,
+      "row": 0,
+      "col": 1,
+      "score": 0.0,
+      "seconds": 3.18,
+      "box": [
+        175,
+        0,
+        351,
+        144
+      ],
+      "polygon": [
+        [
+          -122.41953775128044,
+          47.67330744465093
+        ],
+        [
+          -122.39621575209456,
+          47.67330744465093
+        ],
+        [
+          -122.39621575209456,
+          47.660483850470385
+        ],
+        [
+          -122.41953775128044,
+          47.660483850470385
+        ],
+        [
+          -122.41953775128044,
+          47.67330744465093
+        ]
+      ],
+      "raw": "0.0",
+      "loss_share": 0.0,
+      "forest_share": 0.234,
+      "eligible": false,
+      "score_raw": 0.0
+    },
+    {
+      "id": 2,
+      "row": 1,
+      "col": 0,
+      "score": 0.0,
+      "seconds": 3.18,
+      "box": [
+        0,
+        144,
+        175,
+        288
+      ],
+      "polygon": [
+        [
+          -122.44272723910731,
+          47.660483850470385
+        ],
+        [
+          -122.41953775128044,
+          47.660483850470385
+        ],
+        [
+          -122.41953775128044,
+          47.64766025628984
+        ],
+        [
+          -122.44272723910731,
+          47.64766025628984
+        ],
+        [
+          -122.44272723910731,
+          47.660483850470385
+        ]
+      ],
+      "raw": "0.0",
+      "loss_share": 0.0,
+      "forest_share": 0.114,
+      "eligible": false,
+      "score_raw": 0.0
+    },
+    {
+      "id": 3,
+      "row": 1,
+      "col": 1,
+      "score": 0.0,
+      "seconds": 3.28,
+      "box": [
+        175,
+        144,
+        351,
+        288
+      ],
+      "polygon": [
+        [
+          -122.41953775128044,
+          47.660483850470385
+        ],
+        [
+          -122.39621575209456,
+          47.660483850470385
+        ],
+        [
+          -122.39621575209456,
+          47.64766025628984
+        ],
+        [
+          -122.41953775128044,
+          47.64766025628984
+        ],
+        [
+          -122.41953775128044,
+          47.660483850470385
+        ]
+      ],
+      "raw": "0.0",
+      "loss_share": 0.0,
+      "forest_share": 0.044,
+      "eligible": false,
+      "score_raw": 0.0
+    }
+  ],
+  "fetch_s": 6.29,
+  "model_s": 3.36,
+  "total_s": 9.68,
+  "mask_error": null
+}

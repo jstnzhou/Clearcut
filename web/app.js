@@ -274,10 +274,14 @@ function renderFinding() {
       : "The windows do not show a clear plantation conversion.";
     const disclaimer = document.createElement("p");
     disclaimer.className = "disclaimer";
-    disclaimer.textContent = "Not a compliance finding. Color is Perceptron's conversion confidence, from green to red.";
+    disclaimer.textContent = state.confidence.gated
+      ? "Not a compliance finding. Color appears where 2020 forest, post-2020 tree loss, and Perceptron agree."
+      : "Not a compliance finding. Color is Perceptron's conversion confidence, from green to red.";
     const loss = document.createElement("p");
     loss.className = "loss-note";
-    loss.textContent = "Mean confidence " + mean.toFixed(2) + " across overlapping windows.";
+    loss.textContent = state.confidence.gated
+      ? "Mean confidence " + mean.toFixed(2) + " where trees were lost after 2020."
+      : "Mean confidence " + mean.toFixed(2) + " across the tiles.";
     findingEl.append(verdict, disclaimer, loss);
     return;
   }
@@ -376,17 +380,35 @@ function chipCollection() {
   };
 }
 
+function overlayOpacity() {
+  const input = document.getElementById("overlay");
+  if (!input) return 0.55;
+  const value = Number(input.value);
+  return Number.isFinite(value) ? value / 100 : 0.55;
+}
+
+function applyOverlayOpacity() {
+  if (!map || !map.getLayer("confidence")) return;
+  map.setPaintProperty("confidence", "raster-opacity", overlayOpacity());
+}
+
 function showConfidence() {
   if (!state.mapReady || !state.confidence || !state.showingSubmission) return;
   const coords = imageCoordinates(state.bbox);
   const url = state.plotUrl + "/confidence.png";
   if (!map.getSource("confidence")) {
     map.addSource("confidence", { type: "image", url: url, coordinates: coords });
-    map.addLayer({ id: "confidence", type: "raster", source: "confidence" });
+    map.addLayer({
+      id: "confidence",
+      type: "raster",
+      source: "confidence",
+      paint: { "raster-opacity": overlayOpacity() }
+    });
   } else {
     map.getSource("confidence").updateImage({ url: url, coordinates: coords });
   }
   map.setLayoutProperty("confidence", "visibility", "visible");
+  applyOverlayOpacity();
   if (map.getLayer("chips-fill")) {
     map.setLayoutProperty("chips-fill", "visibility", "none");
     map.setLayoutProperty("chips-line", "visibility", "none");
@@ -716,6 +738,7 @@ document.getElementById("analyze").addEventListener("click", function () {
 });
 
 timeInput.addEventListener("input", function () { setTime(timeInput.value); });
+document.getElementById("overlay").addEventListener("input", applyOverlayOpacity);
 
 document.getElementById("fly-form").addEventListener("submit", function (event) {
   event.preventDefault();

@@ -3,10 +3,16 @@
 Usage:
     python pipeline/analyze_fast.py --bbox minLon,minLat,maxLon,maxLat --out data/plots/name
 """
+import os
+
+os.environ.setdefault("GDAL_HTTP_TIMEOUT", "90")
+os.environ.setdefault("GDAL_HTTP_CONNECTTIMEOUT", "20")
+os.environ.setdefault("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
+os.environ.setdefault("CPL_VSIL_CURL_ALLOWED_EXTENSIONS", ".tif")
+
 import argparse
 import json
 import math
-import os
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -138,9 +144,30 @@ def ask_video(path):
     return score, text, round(time.perf_counter() - started, 2)
 
 
-def tiles(width, height):
-    cols = max(1, math.ceil(width / 400))
-    rows = max(1, math.ceil(height / 400))
+def month_near(date_str, anchor):
+    month = int(date_str[5:7])
+    return min((month - anchor) % 12, (anchor - month) % 12) <= 1
+
+
+def keep_season(scenes):
+    """Drop years whose scene is more than a month from the latest scene."""
+    if len(scenes) < 2:
+        return scenes
+    anchor = int(scenes[-1][1]["date"][5:7])
+    kept = [row for row in scenes if month_near(row[1]["date"], anchor)]
+    return kept if len(kept) >= 2 else scenes
+
+
+def tiles(width, height, target=250, max_tiles=16):
+    cols = max(1, math.ceil(width / target))
+    rows = max(1, math.ceil(height / target))
+    while cols * rows > max_tiles:
+        if cols >= rows and cols > 1:
+            cols -= 1
+        elif rows > 1:
+            rows -= 1
+        else:
+            break
     boxes = []
     for row in range(rows):
         for col in range(cols):
@@ -182,7 +209,28 @@ def colorize(scores):
     return out
 
 
-def paint(size, boxes, score_of):
+def read_masks(bbox):
+    from chip_stats import read_jrc
+    from verify import hansen_window
+
+    lat = (bbox[1] + bbox[3]) / 2
+    lon = (bbox[0] + bbox[2]) / 2
+    try:
+        loss = hansen_window(bbox, lat, lon) > 20
+    except Exception as exc:
+        return None, None, f"hansen: {exc}"
+    _, forest, jrc_error = read_jrc(bbox, lat, lon)
+    if forest is None:
+        return None, None, jrc_error or "jrc missing"
+    return loss, forest == 1, None
+
+
+def resize_mask(mask, width, height):
+    image = Image.fromarray(mask.astype(np.uint8) * 255)
+    return np.array(image.resize((width, height), Image.Resampling.NEAREST)) > 0
+
+
+def paint(size, score_of, pixel_mask=None):
     width, height = size
     grid = np.zeros((height, width), np.float32)
     known = np.zeros((height, width), bool)
@@ -197,6 +245,8 @@ def paint(size, boxes, score_of):
         dtype=np.float32,
     ) / 255
     blurred[~known] = 0
+    if pixel_mask is not None:
+        blurred *= pixel_mask
     return colorize(np.clip(blurred, 0, 1))
 
 
@@ -211,7 +261,7 @@ def main():
 
     with ThreadPoolExecutor(max_workers=len(list(YEARS))) as pool:
         fetched = list(pool.map(lambda year: fetch_year(bbox, year, args.out), YEARS))
-    scenes = [row for row in fetched if row is not None]
+    scenes = keep_season([row for row in fetched if row is not None])
     if len(scenes) < 2:
         raise SystemExit("fewer than two clear scenes")
     target = scenes[0][0].shape[:2]
@@ -228,6 +278,8 @@ def main():
 
     height, width = target
     _, _, boxes = tiles(width, height)
+    mask_pool = ThreadPoolExecutor(max_workers=1)
+    mask_future = mask_pool.submit(read_masks, bbox)
     video_dir = os.path.join(args.out, "videos")
     os.makedirs(video_dir, exist_ok=True)
 
@@ -253,20 +305,47 @@ def main():
     with ThreadPoolExecutor(max_workers=len(boxes)) as pool:
         windows = list(pool.map(lambda pair: one(*pair), list(enumerate(boxes))))
     model_s = round(time.perf_counter() - model_started, 2)
+    loss_mask, forest_mask, mask_error = mask_future.result()
+    mask_pool.shutdown(wait=False)
 
-    Image.fromarray(paint((width, height), [(w["box"], w["score"]) for w in windows])).save(
+    pixel_mask = None
+    if loss_mask is not None and forest_mask is not None:
+        loss_img = resize_mask(loss_mask, width, height)
+        forest_img = resize_mask(forest_mask, width, height)
+        pixel_mask = np.zeros((height, width), np.float32)
+        for window in windows:
+            left, top, right, bottom = window["box"]
+            loss_share = float(loss_img[top:bottom, left:right].mean())
+            forest_share = float(forest_img[top:bottom, left:right].mean())
+            window["loss_share"] = round(loss_share, 3)
+            window["forest_share"] = round(forest_share, 3)
+            window["eligible"] = forest_share >= 0.5 and loss_share >= 0.08
+            if window["eligible"]:
+                pixel_mask[top:bottom, left:right] = (loss_img[top:bottom, left:right] & forest_img[top:bottom, left:right]).astype(np.float32)
+            elif window["score"] is not None:
+                window["score_raw"] = window["score"]
+                window["score"] = 0.0
+        scored = [(w["loss_share"], w["score"]) for w in windows if w.get("eligible") and w["score"] is not None]
+        weight = sum(share for share, _ in scored)
+        mean_score = round(sum(share * score for share, score in scored) / weight, 3) if weight else 0.0
+    else:
+        scored = [w["score"] for w in windows if w["score"] is not None]
+        mean_score = round(float(np.mean(scored)), 3) if scored else None
+
+    Image.fromarray(paint((width, height), [(w["box"], w["score"]) for w in windows], pixel_mask)).save(
         os.path.join(args.out, "confidence.png")
     )
-    known = [w["score"] for w in windows if w["score"] is not None]
     confidence = {
         "model": "perceptron-mk1.5",
         "reasoning_effort": "high",
         "prompt": PROMPT,
-        "mean_score": round(float(np.mean(known)), 3) if known else None,
+        "gated": pixel_mask is not None,
+        "mean_score": mean_score,
         "windows": windows,
         "fetch_s": fetch_s,
         "model_s": model_s,
         "total_s": round(time.perf_counter() - started, 2),
+        "mask_error": mask_error,
     }
     with open(os.path.join(args.out, "confidence.json"), "w") as f:
         json.dump(confidence, f, indent=2)
