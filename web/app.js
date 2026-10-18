@@ -434,6 +434,10 @@ function renderFinding() {
   const mean = confidence && confidence.maps_only
     ? confidence.mean_score
     : scoredMean(confidence);
+  if (confidence && !confidence.maps_only && confidence.model && mean === null) {
+    appendInvestigation();
+    return;
+  }
   if (confidence && typeof mean === "number") {
     const verdict = document.createElement("p");
     verdict.className = "verdict";
@@ -480,8 +484,10 @@ function renderFinding() {
     appendInvestigation();
     return;
   }
-  appendInvestigation();
-  if (!state.analysisLoaded) return;
+  if (!state.analysisLoaded) {
+    appendInvestigation();
+    return;
+  }
   if (countResult("confirmed_conversion") > 0) {
     const verdict = document.createElement("p");
     verdict.className = "verdict";
