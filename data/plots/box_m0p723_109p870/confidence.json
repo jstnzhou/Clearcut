@@ -1,0 +1,260 @@
+{
+  "model": "perceptron-mk1.5",
+  "reasoning_effort": "high",
+  "prompt": "This video is one frame per year of the same land, from 2020 onward, in order, about one frame per second. Reply with one number from 0.0 to 1.0 and nothing else. The number is your confidence that forest in the early frames was converted to plantation by the later frames: rectangular blocks, straight access roads, or planting rows. 0.0 means still forest or no conversion. 1.0 means a clear plantation conversion. Use a value in between when only part of the tile changed or you are unsure.",
+  "gated": true,
+  "perceptron_only": false,
+  "maps_only": false,
+  "layers": [
+    "forest",
+    "loss"
+  ],
+  "both_share": 0.017,
+  "mean_score": 0.0,
+  "windows": [
+    {
+      "id": 0,
+      "row": 0,
+      "col": 0,
+      "score": 0.0,
+      "seconds": 3.24,
+      "box": [
+        0,
+        0,
+        169,
+        229
+      ],
+      "polygon": [
+        [
+          109.84683336603024,
+          -0.7025462600212933
+        ],
+        [
+          109.86202922086409,
+          -0.7025462600212933
+        ],
+        [
+          109.86202922086409,
+          -0.7232721731034532
+        ],
+        [
+          109.84683336603024,
+          -0.7232721731034532
+        ],
+        [
+          109.84683336603024,
+          -0.7025462600212933
+        ]
+      ],
+      "raw": "1.0",
+      "loss_share": 0.012,
+      "forest_share": 0.878,
+      "eligible": false,
+      "score_raw": 1.0
+    },
+    {
+      "id": 1,
+      "row": 0,
+      "col": 1,
+      "score": 0.0,
+      "seconds": 2.8,
+      "box": [
+        169,
+        0,
+        338,
+        229
+      ],
+      "polygon": [
+        [
+          109.86202922086409,
+          -0.7025462600212933
+        ],
+        [
+          109.87722507569794,
+          -0.7025462600212933
+        ],
+        [
+          109.87722507569794,
+          -0.7232721731034532
+        ],
+        [
+          109.86202922086409,
+          -0.7232721731034532
+        ],
+        [
+          109.86202922086409,
+          -0.7025462600212933
+        ]
+      ],
+      "raw": "1.0",
+      "loss_share": 0.007,
+      "forest_share": 0.837,
+      "eligible": false,
+      "score_raw": 1.0
+    },
+    {
+      "id": 2,
+      "row": 0,
+      "col": 2,
+      "score": 0.0,
+      "seconds": 4.37,
+      "box": [
+        338,
+        0,
+        507,
+        229
+      ],
+      "polygon": [
+        [
+          109.87722507569794,
+          -0.7025462600212933
+        ],
+        [
+          109.89242093053178,
+          -0.7025462600212933
+        ],
+        [
+          109.89242093053178,
+          -0.7232721731034532
+        ],
+        [
+          109.87722507569794,
+          -0.7232721731034532
+        ],
+        [
+          109.87722507569794,
+          -0.7025462600212933
+        ]
+      ],
+      "raw": "0.0",
+      "loss_share": 0.005,
+      "forest_share": 0.864,
+      "eligible": false,
+      "score_raw": 0.0
+    },
+    {
+      "id": 3,
+      "row": 1,
+      "col": 0,
+      "score": 0.0,
+      "seconds": 3.2,
+      "box": [
+        0,
+        229,
+        169,
+        459
+      ],
+      "polygon": [
+        [
+          109.84683336603024,
+          -0.7232721731034532
+        ],
+        [
+          109.86202922086409,
+          -0.7232721731034532
+        ],
+        [
+          109.86202922086409,
+          -0.7440885923562774
+        ],
+        [
+          109.84683336603024,
+          -0.7440885923562774
+        ],
+        [
+          109.84683336603024,
+          -0.7232721731034532
+        ]
+      ],
+      "raw": "1.0",
+      "loss_share": 0.231,
+      "forest_share": 0.257,
+      "eligible": false,
+      "score_raw": 1.0
+    },
+    {
+      "id": 4,
+      "row": 1,
+      "col": 1,
+      "score": 0.0,
+      "seconds": 4.37,
+      "box": [
+        169,
+        229,
+        338,
+        459
+      ],
+      "polygon": [
+        [
+          109.86202922086409,
+          -0.7232721731034532
+        ],
+        [
+          109.87722507569794,
+          -0.7232721731034532
+        ],
+        [
+          109.87722507569794,
+          -0.7440885923562774
+        ],
+        [
+          109.86202922086409,
+          -0.7440885923562774
+        ],
+        [
+          109.86202922086409,
+          -0.7232721731034532
+        ]
+      ],
+      "raw": "1.0",
+      "loss_share": 0.001,
+      "forest_share": 0.083,
+      "eligible": false,
+      "score_raw": 1.0
+    },
+    {
+      "id": 5,
+      "row": 1,
+      "col": 2,
+      "score": 0.0,
+      "seconds": 4.38,
+      "box": [
+        338,
+        229,
+        507,
+        459
+      ],
+      "polygon": [
+        [
+          109.87722507569794,
+          -0.7232721731034532
+        ],
+        [
+          109.89242093053178,
+          -0.7232721731034532
+        ],
+        [
+          109.89242093053178,
+          -0.7440885923562774
+        ],
+        [
+          109.87722507569794,
+          -0.7440885923562774
+        ],
+        [
+          109.87722507569794,
+          -0.7232721731034532
+        ]
+      ],
+      "raw": "0.9",
+      "loss_share": 0.0,
+      "forest_share": 0.694,
+      "eligible": false,
+      "score_raw": 0.9
+    }
+  ],
+  "fetch_s": 6.74,
+  "model_s": 4.47,
+  "total_s": 11.23,
+  "mask_error": null
+}

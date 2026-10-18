@@ -274,14 +274,40 @@ function renderFinding() {
       : "The windows do not show a clear plantation conversion.";
     const disclaimer = document.createElement("p");
     disclaimer.className = "disclaimer";
-    disclaimer.textContent = state.confidence.gated
+    disclaimer.textContent = state.confidence.maps_only
+      ? "Green is forest in 2020. Red is that forest lost after 2020. Perceptron is off. Not a compliance finding."
+      : state.confidence.perceptron_only
+      ? "Perceptron only. The 2020 forest map and the loss map are off, so you can compare the color with the photo."
+      : state.confidence.gated
       ? "Not a compliance finding. Color appears where 2020 forest, post-2020 tree loss, and Perceptron agree."
       : "Not a compliance finding. Color is Perceptron's conversion confidence, from green to red.";
     const loss = document.createElement("p");
     loss.className = "loss-note";
-    loss.textContent = state.confidence.gated
-      ? "Mean confidence " + mean.toFixed(2) + " where trees were lost after 2020."
-      : "Mean confidence " + mean.toFixed(2) + " across the tiles.";
+    if (state.confidence.maps_only) {
+      const layers = state.confidence.layers || [];
+      const hasForest = layers.indexOf("forest") !== -1;
+      const hasLoss = layers.indexOf("loss") !== -1;
+      const share = typeof state.confidence.both_share === "number" ? state.confidence.both_share : mean;
+      if (hasForest && hasLoss) {
+        verdict.textContent = share >= 0.05
+          ? "Part of this rectangle was forest in 2020 and lost trees after the cutoff."
+          : "These two maps do not show much post-2020 loss on 2020 forest.";
+        disclaimer.textContent = "Green is forest in 2020. Red is that forest lost after 2020. Perceptron is off. Not a compliance finding.";
+        loss.textContent = Math.round(share * 1000) / 10 + "% of the rectangle is red.";
+      } else if (hasLoss) {
+        verdict.textContent = "Red marks tree loss after 2020.";
+        disclaimer.textContent = "The 2020 forest map and Perceptron are off. Not a compliance finding.";
+        loss.textContent = Math.round(mean * 1000) / 10 + "% of the rectangle is red.";
+      } else {
+        verdict.textContent = "Green marks forest in 2020.";
+        disclaimer.textContent = "The loss map and Perceptron are off. Not a compliance finding.";
+        loss.textContent = Math.round(mean * 1000) / 10 + "% of the rectangle is green.";
+      }
+    } else {
+      loss.textContent = state.confidence.gated
+        ? "Mean confidence " + mean.toFixed(2) + " where trees were lost after 2020."
+        : "Mean confidence " + mean.toFixed(2) + " across the tiles.";
+    }
     findingEl.append(verdict, disclaimer, loss);
     return;
   }
@@ -714,11 +740,18 @@ document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
   if (!state.draftBbox) return;
   button.disabled = true;
-  analyzeNote.textContent = "Fetching the years and scoring the tiles.";
+  analyzeNote.textContent = document.getElementById("use-perceptron").checked
+    ? "Fetching the years and scoring the tiles."
+    : "Fetching the years and the forest and loss maps.";
   fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bbox: state.draftBbox })
+    body: JSON.stringify({
+      bbox: state.draftBbox,
+      perceptron: document.getElementById("use-perceptron").checked,
+      forest: document.getElementById("use-forest").checked,
+      loss: document.getElementById("use-loss").checked
+    })
   }).then(function (response) {
     return response.json().then(function (payload) {
       if (!response.ok) throw new Error(payload.error || "Analysis failed");

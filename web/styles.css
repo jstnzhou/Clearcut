@@ -152,6 +152,14 @@ button:hover {
   margin-top: 8px;
 }
 
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 4px;
+  font-size: 13px;
+}
+
 .legend,
 .counts {
   list-style: none;

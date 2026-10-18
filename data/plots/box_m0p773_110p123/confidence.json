@@ -1,0 +1,19 @@
+{
+  "model": null,
+  "reasoning_effort": null,
+  "prompt": null,
+  "gated": false,
+  "perceptron_only": false,
+  "maps_only": true,
+  "layers": [
+    "forest",
+    "loss"
+  ],
+  "both_share": 0.71,
+  "mean_score": 0.71,
+  "windows": [],
+  "fetch_s": 6.14,
+  "model_s": 0.0,
+  "total_s": 9.23,
+  "mask_error": null
+}
