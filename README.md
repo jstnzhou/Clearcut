@@ -1,5 +1,7 @@
 # Clearcut
 
+> **DubHacks 2026:** Partner split and product lock for the hackathon build live in [`docs/hackathon/`](./docs/hackathon/). The build plan there follows the farmer-facing **Groundtruth** audit flow; this README describes an earlier government-facing framing of the same satellite check.
+
 Clearcut is an independent check a government can run when a plantation asks to be approved.
 
 A plantation that wants approval must submit the geographic location of every plot. Clearcut takes one submitted location and builds the record for that ground back to the EU deforestation cutoff of 31 December 2020. The government decides whether to approve it. Clearcut returns the satellite record and whether that record supports approval.
