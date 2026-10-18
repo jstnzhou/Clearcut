@@ -32,7 +32,10 @@ const sceneDate = document.getElementById("scene-date");
 const timeInput = document.getElementById("time");
 const flyNote = document.getElementById("fly-note");
 const analyzeNote = document.getElementById("analyze-note");
+const processingEl = document.getElementById("processing");
+const processingLabel = document.getElementById("processing-label");
 const intakeNote = document.getElementById("intake-note");
+let processingTimer = null;
 const intakeFileName = document.getElementById("intake-file-name");
 const intakeFeatureBox = document.getElementById("intake-features");
 const intakeFeatureList = document.getElementById("intake-feature-list");
@@ -390,11 +393,78 @@ function scenesFrom(evidence) {
   return scenes;
 }
 
+const clippedImages = {};
+const imageEpoch = {};
+
+function clipImageToShape(url, bbox, geometry) {
+  if (!geometry || (geometry.type !== "Polygon" && geometry.type !== "MultiPolygon")) {
+    return Promise.resolve(url);
+  }
+  if (clippedImages[url]) return Promise.resolve(clippedImages[url]);
+  return new Promise(function (resolve) {
+    const img = new Image();
+    img.onload = function () {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        const minLon = bbox[0];
+        const minLat = bbox[1];
+        const maxLon = bbox[2];
+        const maxLat = bbox[3];
+        const lonSpan = Math.max(maxLon - minLon, 1e-9);
+        const latSpan = Math.max(maxLat - minLat, 1e-9);
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.beginPath();
+        const polys = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+        polys.forEach(function (poly) {
+          (poly || []).forEach(function (ring) {
+            (ring || []).forEach(function (pt, i) {
+              if (!pt || pt.length < 2) return;
+              const x = ((pt[0] - minLon) / lonSpan) * canvas.width;
+              const y = ((maxLat - pt[1]) / latSpan) * canvas.height;
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            });
+            ctx.closePath();
+          });
+        });
+        ctx.fill("evenodd");
+        const shown = canvas.toDataURL("image/png");
+        clippedImages[url] = shown;
+        resolve(shown);
+      } catch (error) {
+        resolve(url);
+      }
+    };
+    img.onerror = function () { resolve(url); };
+    img.src = url;
+  });
+}
+
+function showImageLayer(id, url, coords, setup) {
+  const epoch = (imageEpoch[id] || 0) + 1;
+  imageEpoch[id] = epoch;
+  clipImageToShape(url, state.bbox, state.draftGeometry).then(function (shown) {
+    if (imageEpoch[id] !== epoch || !state.mapReady || !map) return;
+    if (!map.getSource(id)) setup(shown);
+    else map.getSource(id).updateImage({ url: shown, coordinates: coords });
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "visible");
+  });
+}
+
 function ensureScene(url, coords) {
   if (map.getSource("scene")) return;
   const before = map.getLayer("chips-fill") ? "chips-fill" : undefined;
   map.addSource("scene", { type: "image", url: url, coordinates: coords });
-  map.addLayer({ id: "scene", type: "raster", source: "scene" }, before);
+  map.addLayer({
+    id: "scene",
+    type: "raster",
+    source: "scene",
+    paint: { "raster-fade-duration": 0, "raster-resampling": "nearest" }
+  }, before);
 }
 
 function setTime(index) {
@@ -407,14 +477,11 @@ function setTime(index) {
   renderTicks(next);
   if (!state.mapReady || !state.showingSubmission) return;
   paintMarks();
-  const source = map.getSource("scene");
   const coords = imageCoordinates(state.bbox);
   const url = state.plotUrl + "/" + scenes[next].file;
-  if (!source) {
-    ensureScene(url, coords);
-    return;
-  }
-  source.updateImage({ url: url, coordinates: coords });
+  showImageLayer("scene", url, coords, function (shown) {
+    ensureScene(shown, coords);
+  });
 }
 
 function paintMarks() {
@@ -470,19 +537,21 @@ function showConfidence() {
   if (!state.mapReady || !state.confidence || !state.showingSubmission) return;
   const coords = imageCoordinates(state.bbox);
   const url = state.plotUrl + "/confidence.png";
-  if (!map.getSource("confidence")) {
-    map.addSource("confidence", { type: "image", url: url, coordinates: coords });
+  showImageLayer("confidence", url, coords, function (shown) {
+    if (map.getSource("confidence")) return;
+    map.addSource("confidence", { type: "image", url: shown, coordinates: coords });
     map.addLayer({
       id: "confidence",
       type: "raster",
       source: "confidence",
-      paint: { "raster-opacity": overlayOpacity() }
+      paint: {
+        "raster-opacity": overlayOpacity(),
+        "raster-fade-duration": 0,
+        "raster-resampling": "nearest"
+      }
     });
-  } else {
-    map.getSource("confidence").updateImage({ url: url, coordinates: coords });
-  }
-  map.setLayoutProperty("confidence", "visibility", "visible");
-  applyOverlayOpacity();
+    applyOverlayOpacity();
+  });
   if (map.getLayer("chips-fill")) {
     map.setLayoutProperty("chips-fill", "visibility", "none");
     map.setLayoutProperty("chips-line", "visibility", "none");
@@ -1191,6 +1260,32 @@ if (closeBoard) {
   });
 }
 
+function setProcessing(on, label) {
+  if (!processingEl) return;
+  if (processingTimer) {
+    clearInterval(processingTimer);
+    processingTimer = null;
+  }
+  if (!on) {
+    processingEl.hidden = true;
+    processingEl.setAttribute("aria-busy", "false");
+    return;
+  }
+  if (processingLabel) processingLabel.textContent = label || "Processing";
+  processingEl.hidden = false;
+  processingEl.setAttribute("aria-busy", "true");
+}
+
+function startProcessingCycle() {
+  const steps = ["Processing", "Fetching years", "Scoring tiles", "Please wait"];
+  let index = 0;
+  setProcessing(true, steps[0]);
+  processingTimer = setInterval(function () {
+    index = (index + 1) % steps.length;
+    if (processingLabel) processingLabel.textContent = steps[index];
+  }, 1400);
+}
+
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
   if (!state.draftBbox) return;
@@ -1202,6 +1297,7 @@ document.getElementById("analyze").addEventListener("click", function () {
   button.disabled = true;
   button.textContent = "Loading…";
   analyzeNote.textContent = "Fetching the years and scoring the tiles.";
+  startProcessingCycle();
   const selected = state.intakeItems.find(function (row) { return row.id === state.intakeSelectedId; });
   const payload = {
     bbox: state.draftBbox,
@@ -1221,6 +1317,8 @@ document.getElementById("analyze").addEventListener("click", function () {
       return body;
     });
   }).then(function (payload) {
+    if (payload.cached) setProcessing(true, "Loading cache");
+    else setProcessing(true, "Finishing");
     state.plotUrl = "../data/plots/" + payload.plot;
     return loadPlot().then(function () {
       return payload;
@@ -1233,6 +1331,7 @@ document.getElementById("analyze").addEventListener("click", function () {
   }).catch(function (error) {
     analyzeNote.textContent = error.message || "Analysis failed";
   }).finally(function () {
+    setProcessing(false);
     button.disabled = false;
     button.textContent = "Analyze this area";
   });

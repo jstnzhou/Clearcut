@@ -433,6 +433,18 @@ def slice_cover(slice_bbox, aoi):
         return piece.intersection(fixed).area / area
 
 
+def rgba_inside(rgb, mask):
+    """Keep RGB pixels inside the AOI and make the rest transparent."""
+    height, width = rgb.shape[:2]
+    if mask.shape != (height, width):
+        alpha = np.array(
+            Image.fromarray((mask > 0).astype(np.uint8) * 255).resize((width, height), Image.Resampling.NEAREST)
+        )
+    else:
+        alpha = (mask > 0).astype(np.uint8) * 255
+    return np.dstack([rgb[:, :, :3], alpha])
+
+
 def aoi_pixel_mask(aoi, bbox, width, height):
     """Rasterize the AOI into a float mask matching overview pixels."""
     if aoi is None:
@@ -629,15 +641,17 @@ def main():
     if len(overview) < 2:
         raise SystemExit("fewer than two years had a clear view of this rectangle")
     target = overview[0][0].shape[:2]
+    height, width = target
+    aoi_mask = aoi_pixel_mask(aoi, bbox, width, height) if aoi is not None else None
     frames = []
     meta = []
     for rgb, stats in overview:
         if rgb.shape[:2] != target:
             rgb = np.array(Image.fromarray(rgb).resize((target[1], target[0]), Image.Resampling.BILINEAR))
-        Image.fromarray(rgb).save(os.path.join(args.out, stats["file"]))
+        display = rgba_inside(rgb, aoi_mask) if aoi_mask is not None else rgb
+        Image.fromarray(display).save(os.path.join(args.out, stats["file"]))
         frames.append(Image.fromarray(rgb))
         meta.append(stats)
-    height, width = target
     native_w, native_h = mosaic_size(bbox)
     overview_is_native = width >= native_w - 2 and height >= native_h - 2
 
@@ -751,7 +765,8 @@ def main():
 
     loss_img = resize_mask(loss_mask, width, height) if loss_mask is not None else None
     forest_img = resize_mask(forest_mask, width, height) if forest_mask is not None else None
-    aoi_mask = aoi_pixel_mask(aoi, bbox, width, height)
+    if aoi_mask is None and aoi is not None:
+        aoi_mask = aoi_pixel_mask(aoi, bbox, width, height)
     pixel_mask = None
     both_share = None
     if loss_img is not None and forest_img is not None:
@@ -767,9 +782,6 @@ def main():
         if loss_img is None and forest_img is None:
             raise SystemExit(mask_error or "The forest and loss maps did not load.")
         image = paint_maps(forest_img, loss_img)
-        if aoi_mask is not None:
-            image = image.copy()
-            image[:, :, 3] = (image[:, :, 3].astype(np.float32) * aoi_mask).astype(np.uint8)
         if both_share is not None:
             mean_score = both_share
         elif loss_img is not None:
@@ -798,6 +810,9 @@ def main():
         mean_score = round(float(np.mean(scored)), 3) if scored else None
         image = paint((width, height), [(w["box"], w["score"]) for w in windows], aoi_mask)
 
+    if aoi_mask is not None and image.ndim == 3 and image.shape[2] == 4:
+        image = image.copy()
+        image[:, :, 3] = (image[:, :, 3].astype(np.float32) * aoi_mask).astype(np.uint8)
     Image.fromarray(image).save(os.path.join(args.out, "confidence.png"))
     confidence = {
         "model": None if maps_only else "perceptron-mk1.5",
@@ -830,8 +845,12 @@ def main():
         "before": {k: meta[0][k] for k in ("date", "scene_id", "cloud_cover")},
         "after": {k: meta[-1][k] for k in ("date", "scene_id", "cloud_cover")},
     }
-    frames[0].save(os.path.join(args.out, "before.png"))
-    frames[-1].save(os.path.join(args.out, "after.png"))
+    for frame, name in ((frames[0], "before.png"), (frames[-1], "after.png")):
+        arr = np.array(frame)
+        if aoi_mask is not None and arr.ndim == 3 and arr.shape[2] >= 3:
+            Image.fromarray(rgba_inside(arr[:, :, :3], aoi_mask)).save(os.path.join(args.out, name))
+        else:
+            frame.save(os.path.join(args.out, name))
     with open(os.path.join(args.out, "evidence.json"), "w") as f:
         json.dump(evidence, f, indent=2)
         f.write("\n")
