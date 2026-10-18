@@ -5,3 +5,5 @@ rasterio
 numpy
 pillow
 shapely
+pypdf
+openpyxl
