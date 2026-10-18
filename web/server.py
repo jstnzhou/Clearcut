@@ -50,12 +50,10 @@ class Handler(SimpleHTTPRequestHandler):
         bbox_arg = ",".join(str(v) for v in bbox)
         env = os.environ.copy()
         steps = [
-            [str(PYTHON), "pipeline/fetch_plot.py", "--bbox", bbox_arg, "--years", "--out", str(plot)],
-            [str(PYTHON), "pipeline/chip_stats.py", str(plot)],
-            [str(PYTHON), "pipeline/perceive_grid.py", str(plot)],
+            [str(PYTHON), "pipeline/analyze_fast.py", "--bbox", bbox_arg, "--out", str(plot)],
         ]
         for cmd in steps:
-            run = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True)
+            run = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, timeout=180)
             if run.returncode != 0:
                 detail = (run.stderr or run.stdout or "analysis failed").strip()[-800:]
                 self._json(500, {"error": detail})

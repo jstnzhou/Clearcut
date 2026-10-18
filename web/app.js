@@ -692,7 +692,7 @@ document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
   if (!state.draftBbox) return;
   button.disabled = true;
-  analyzeNote.textContent = "Downloading a scene for each year, then running Perceptron. This takes a few minutes.";
+  analyzeNote.textContent = "Fetching the years and scoring the tiles.";
   fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
