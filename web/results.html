@@ -36,14 +36,11 @@
         </label>
       </div>
 
-      <div class="slider" id="slider">
-        <img id="slide-after" alt="Later satellite scene">
-        <div class="slider-before" id="slide-before-wrap">
-          <img id="slide-before" alt="Earlier satellite scene">
-        </div>
-        <div class="slider-handle" id="slide-handle" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-label="Compare earlier and later scenes">
-          <span></span>
-        </div>
+      <div class="slider" id="slider" style="--pos: 50%">
+        <img class="slider-layer" id="slide-after" alt="Later satellite scene">
+        <img class="slider-layer slider-before-layer" id="slide-before" alt="Earlier satellite scene">
+        <div class="slider-line" aria-hidden="true"></div>
+        <input class="slider-range" id="slide-range" type="range" min="0" max="100" value="50" aria-label="Reveal earlier scene from the left">
         <div class="slider-labels">
           <span id="label-left"></span>
           <span id="label-right"></span>
@@ -81,11 +78,23 @@
       </div>
     </section>
 
-    <section class="perception" aria-label="What replaced the forest">
+    <section class="replacement" aria-label="What replaced the forest">
       <h2>What replaced the forest</h2>
-      <p class="ai-label">AI interpretation · Perceptron</p>
-      <p id="perception-copy"></p>
-      <ul class="box-list" id="box-list"></ul>
+      <p id="replacement-summary" class="replacement-summary"></p>
+      <div class="replacement-grid">
+        <div>
+          <h3>On cleared pixels <span id="replacement-year-label"></span></h3>
+          <ul class="share-bars" id="replacement-bars"></ul>
+          <p class="caveat" id="replacement-caveat"></p>
+        </div>
+        <div>
+          <h3>Same pixels in 2020</h3>
+          <ul class="share-bars" id="baseline-bars"></ul>
+          <p class="ai-label">AI interpretation · Perceptron</p>
+          <p id="perception-copy"></p>
+          <ul class="box-list" id="box-list"></ul>
+        </div>
+      </div>
     </section>
 
     <section class="method">

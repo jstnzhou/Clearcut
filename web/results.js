@@ -6,8 +6,7 @@
   const errorEl = document.getElementById("error");
   const peakToggle = document.getElementById("peak-toggle");
   const slider = document.getElementById("slider");
-  const beforeWrap = document.getElementById("slide-before-wrap");
-  const handle = document.getElementById("slide-handle");
+  const rangeInput = document.getElementById("slide-range");
   const imgBefore = document.getElementById("slide-before");
   const imgAfter = document.getElementById("slide-after");
   const labelLeft = document.getElementById("label-left");
@@ -25,11 +24,14 @@
   const datingNote = document.getElementById("dating-note");
 
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const FRAME_MS = 1100;
 
   let audit = null;
   let scenes = [];
+  let preloaded = [];
   let filmIndex = 0;
   let filmTimer = null;
+  let filmPlaying = false;
   let compareMode = "after"; // after | peak
 
   function formatDate(iso) {
@@ -53,41 +55,15 @@
   }
 
   function setSlider(percent) {
-    const value = Math.max(2, Math.min(98, percent));
-    beforeWrap.style.width = value + "%";
-    handle.style.left = value + "%";
-    handle.setAttribute("aria-valuenow", String(Math.round(value)));
+    const value = Math.max(0, Math.min(100, Number(percent)));
+    slider.style.setProperty("--pos", value + "%");
+    if (rangeInput) rangeInput.value = String(Math.round(value));
   }
 
   function bindSlider() {
-    let dragging = false;
-
-    function fromEvent(event) {
-      const rect = slider.getBoundingClientRect();
-      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
-      return ((clientX - rect.left) / rect.width) * 100;
-    }
-
-    function start(event) {
-      dragging = true;
-      setSlider(fromEvent(event));
-      event.preventDefault();
-    }
-    function move(event) {
-      if (!dragging) return;
-      setSlider(fromEvent(event));
-    }
-    function end() {
-      dragging = false;
-    }
-
-    slider.addEventListener("pointerdown", start);
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", end);
-    handle.addEventListener("keydown", function (event) {
-      const now = Number(handle.getAttribute("aria-valuenow") || "50");
-      if (event.key === "ArrowLeft") setSlider(now - 3);
-      if (event.key === "ArrowRight") setSlider(now + 3);
+    // Native range input drives one CSS variable used by clip-path + divider.
+    rangeInput.addEventListener("input", function () {
+      setSlider(rangeInput.value);
     });
     setSlider(50);
   }
@@ -138,38 +114,77 @@
     }
   }
 
+  function preloadScenes() {
+    preloaded = scenes.map(function (scene) {
+      const img = new Image();
+      img.src = scene.url;
+      return img;
+    });
+  }
+
   function setFilm(index) {
-    if (!scenes.length) return;
-    filmIndex = Math.max(0, Math.min(scenes.length - 1, index));
+    if (!scenes.length) return Promise.resolve();
+    filmIndex = ((index % scenes.length) + scenes.length) % scenes.length;
     const scene = scenes[filmIndex];
-    filmFrame.src = scene.url;
-    filmDate.textContent = formatDate(scene.date) + (scene.year ? " · " + scene.year : "");
-    yearRail.querySelectorAll("button").forEach(function (btn) {
-      btn.classList.toggle("active", Number(btn.dataset.index) === filmIndex);
+    const cached = preloaded[filmIndex];
+    return new Promise(function (resolve) {
+      function show() {
+        filmFrame.src = scene.url;
+        filmDate.textContent = formatDate(scene.date) + (scene.year ? " · " + scene.year : "");
+        yearRail.querySelectorAll("button").forEach(function (btn) {
+          btn.classList.toggle("active", Number(btn.dataset.index) === filmIndex);
+        });
+        resolve();
+      }
+      if (cached && cached.complete) {
+        show();
+        return;
+      }
+      filmFrame.onload = function () {
+        filmFrame.onload = null;
+        show();
+      };
+      filmFrame.src = scene.url;
+      if (filmFrame.complete) show();
     });
   }
 
   function stopFilm() {
+    filmPlaying = false;
     if (filmTimer) {
-      clearInterval(filmTimer);
+      clearTimeout(filmTimer);
       filmTimer = null;
     }
     filmPlay.textContent = "Play years";
   }
 
-  function playFilm() {
-    if (filmTimer) {
+  function tickFilm() {
+    if (!filmPlaying) return;
+    const next = filmIndex + 1;
+    if (next >= scenes.length) {
       stopFilm();
       return;
     }
+    setFilm(next).then(function () {
+      if (!filmPlaying) return;
+      filmTimer = setTimeout(tickFilm, FRAME_MS);
+    });
+  }
+
+  function playFilm() {
+    if (filmPlaying) {
+      stopFilm();
+      return;
+    }
+    filmPlaying = true;
     filmPlay.textContent = "Pause";
-    filmTimer = setInterval(function () {
-      if (filmIndex >= scenes.length - 1) {
-        stopFilm();
-        return;
-      }
-      setFilm(filmIndex + 1);
-    }, 900);
+    if (filmIndex >= scenes.length - 1) {
+      setFilm(0).then(function () {
+        filmTimer = setTimeout(tickFilm, FRAME_MS);
+      });
+      return;
+    }
+    filmTimer = setTimeout(tickFilm, FRAME_MS);
   }
 
   function renderYearRail() {
@@ -258,7 +273,50 @@
     document.getElementById("verdict-disclaimer").textContent = audit.verdict.disclaimer;
   }
 
-  function renderPerception() {
+  function fillShareBars(el, shares) {
+    el.replaceChildren();
+    const entries = Object.keys(shares || {}).map(function (key) {
+      return [key, shares[key]];
+    });
+    if (!entries.length) {
+      const li = document.createElement("li");
+      li.textContent = "No land-cover sample yet.";
+      el.append(li);
+      return;
+    }
+    entries.slice(0, 6).forEach(function (pair) {
+      const name = pair[0];
+      const share = pair[1];
+      const li = document.createElement("li");
+      const label = document.createElement("span");
+      label.textContent = name;
+      const track = document.createElement("span");
+      track.className = "track";
+      const fill = document.createElement("span");
+      fill.className = "fill " + String(name).toLowerCase().replace(/[^a-z]+/g, "");
+      fill.style.width = Math.max(2, Math.round(share * 100)) + "%";
+      track.append(fill);
+      const value = document.createElement("span");
+      value.textContent = pct(share);
+      li.append(label, track, value);
+      el.append(li);
+    });
+  }
+
+  function renderReplacement() {
+    const cover = audit.land_cover || {};
+    document.getElementById("replacement-summary").textContent =
+      cover.summary || "Land-cover replacement not computed for this plot yet.";
+    document.getElementById("replacement-year-label").textContent =
+      cover.replacement_year ? "(" + cover.replacement_year + ")" : "";
+    document.getElementById("replacement-caveat").textContent = cover.caveat || "";
+    fillShareBars(document.getElementById("replacement-bars"), cover.replacement_on_loss || {});
+    const baseline =
+      (cover.baseline_on_loss_pixels) ||
+      (cover.io_lulc_annual && cover.io_lulc_annual["2020"] && cover.io_lulc_annual["2020"].on_post_cutoff_loss) ||
+      {};
+    fillShareBars(document.getElementById("baseline-bars"), baseline);
+
     const p = audit.perceptron || {};
     document.getElementById("perception-copy").textContent =
       p.description || "No Perceptron description on this plot yet.";
@@ -284,10 +342,12 @@
     const dl = document.getElementById("method-list");
     dl.replaceChildren();
     const m = audit.methodology || {};
+    const cover = audit.land_cover || {};
     const rows = [
       ["Cutoff", audit.cutoff || "2020-12-31"],
       ["Baseline", m.baseline],
       ["Imagery", m.imagery],
+      ["Land cover", cover.dataset || "Impact Observatory Annual LULC + ESA WorldCover"],
       ["Vision", m.vision],
       ["Dating", (audit.dating && audit.dating.method) || "hansen_annual_loss"],
       ["Share URL", location.origin + (audit.share_path || ("/web/results.html?plot=" + plot))]
@@ -342,10 +402,11 @@
       scenes = [audit.imagery.before, audit.imagery.after].filter(Boolean);
     }
 
+    preloadScenes();
     renderVerdict();
     applyCompareMode();
     renderDating();
-    renderPerception();
+    renderReplacement();
     renderMethod();
     bindSlider();
 

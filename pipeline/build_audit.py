@@ -122,6 +122,7 @@ def build_audit(plot_dir: Path) -> dict:
     chip_stats = load_json(plot_dir / "chip_stats.json")
     perception_tiles = load_json(plot_dir / "perception_tiles.json")
     dating_file = load_json(plot_dir / "dating.json")
+    land_cover = load_json(plot_dir / "land_cover.json")
 
     hansen = evidence.get("hansen") or {}
     dating = dating_file or dating_from_hansen(hansen.get("loss_share_by_year"))
@@ -229,6 +230,7 @@ def build_audit(plot_dir: Path) -> dict:
             "label": "AI interpretation",
         },
         "hansen": hansen,
+        "land_cover": land_cover,
         "jrc_source": (chip_stats or {}).get("jrc_source"),
         "chip_stats": chip_stats,
         "perception_tiles": perception_tiles,
@@ -236,6 +238,7 @@ def build_audit(plot_dir: Path) -> dict:
         "methodology": {
             "baseline": "JRC GFC2020 forest share on chips when available; Hansen tree-cover loss years for dating",
             "imagery": "Sentinel-2 L2A via Microsoft Planetary Computer",
+            "land_cover": "Impact Observatory Annual LULC on Hansen post-cutoff loss pixels; ESA WorldCover as context",
             "vision": "Perceptron Mk1.5 describes conversion; does not supply hectare counts",
             "cutoff": EUDR_CUTOFF,
         },

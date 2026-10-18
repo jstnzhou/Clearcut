@@ -1,6 +1,6 @@
 {
   "id": "kalbar1",
-  "created_at": "2026-10-18T01:22:54.130663+00:00",
+  "created_at": "2026-10-18T01:40:34.318413+00:00",
   "share_path": "/web/results.html?plot=kalbar1",
   "plot": {
     "name": "kalbar1",
@@ -216,6 +216,109 @@
       "2024": 0.0009
     },
     "loss_share_post_cutoff": 0.1987
+  },
+  "land_cover": {
+    "dataset": "Impact Observatory Annual LULC v02 + ESA WorldCover",
+    "source": "Microsoft Planetary Computer STAC",
+    "resolution_m": 10,
+    "hansen_version": "GFC-2024-v1.12",
+    "post_cutoff_loss_pixels": 11440,
+    "post_cutoff_loss_share": 0.1986,
+    "replacement_year": 2023,
+    "replacement_on_loss": {
+      "Rangeland": 0.799,
+      "Trees": 0.1102,
+      "Crops": 0.0907
+    },
+    "replacement_top": [
+      {
+        "class": "Rangeland",
+        "share": 0.799
+      },
+      {
+        "class": "Trees",
+        "share": 0.1102
+      },
+      {
+        "class": "Crops",
+        "share": 0.0907
+      }
+    ],
+    "baseline_year": 2020,
+    "baseline_on_loss_pixels": {
+      "Trees": 1.0
+    },
+    "summary": "On cleared ground, land cover is mostly Rangeland (80%), Trees (11%), Crops (9%). Impact Observatory Annual LULC (10 m) on Hansen post-2020 loss pixels. Oil palm and young plantation often register as rangeland or trees, not a named crop.",
+    "io_lulc_annual": {
+      "2020": {
+        "item_id": "49M-2020",
+        "plot_share": {
+          "Trees": 0.9996,
+          "Water": 0.0004
+        },
+        "on_post_cutoff_loss": {
+          "Trees": 1.0
+        }
+      },
+      "2021": {
+        "item_id": "49M-2021",
+        "plot_share": {
+          "Trees": 0.9998,
+          "Water": 0.0002
+        },
+        "on_post_cutoff_loss": {
+          "Trees": 1.0
+        }
+      },
+      "2022": {
+        "item_id": "49M-2022",
+        "plot_share": {
+          "Trees": 0.9994,
+          "Water": 0.0006
+        },
+        "on_post_cutoff_loss": {
+          "Trees": 1.0
+        }
+      },
+      "2023": {
+        "item_id": "49M-2023",
+        "plot_share": {
+          "Trees": 0.8225,
+          "Rangeland": 0.1588,
+          "Crops": 0.018,
+          "Water": 0.0006
+        },
+        "on_post_cutoff_loss": {
+          "Rangeland": 0.799,
+          "Trees": 0.1102,
+          "Crops": 0.0907
+        }
+      }
+    },
+    "esa_worldcover": {
+      "2020": {
+        "item_id": "ESA_WorldCover_10m_2020_v100_S03E108",
+        "plot_share": {
+          "Tree cover": 0.9975,
+          "Bare / sparse": 0.0025
+        },
+        "on_post_cutoff_loss": {
+          "Tree cover": 0.9983,
+          "Bare / sparse": 0.0017
+        }
+      },
+      "2021": {
+        "item_id": "ESA_WorldCover_10m_2021_v200_S03E108",
+        "plot_share": {
+          "Tree cover": 1.0,
+          "Grassland": 0.0
+        },
+        "on_post_cutoff_loss": {
+          "Tree cover": 1.0
+        }
+      }
+    },
+    "caveat": "WorldCover often still labels mature plantation as tree cover. IO LULC 'Crops' / 'Rangeland' on loss pixels is the clearer replacement signal; it is land cover, not a crop-species map (oil palm vs soy vs rubber)."
   },
   "jrc_source": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/FOREST/GFC2020/LATEST/tiles/JRC_GFC2020_V4_N0_E110.tif",
   "chip_stats": {
@@ -1234,6 +1337,7 @@
   "methodology": {
     "baseline": "JRC GFC2020 forest share on chips when available; Hansen tree-cover loss years for dating",
     "imagery": "Sentinel-2 L2A via Microsoft Planetary Computer",
+    "land_cover": "Impact Observatory Annual LULC on Hansen post-cutoff loss pixels; ESA WorldCover as context",
     "vision": "Perceptron Mk1.5 describes conversion; does not supply hectare counts",
     "cutoff": "2020-12-31"
   }

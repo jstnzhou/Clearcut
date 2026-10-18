@@ -147,7 +147,10 @@ h2 {
   user-select: none;
 }
 
+/* Classic compare slider: both layers full-size; top layer clipped (not resized).
+   Pattern from common before/after compare UIs (clip-path + --pos). */
 .slider {
+  --pos: 50%;
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 10;
@@ -159,7 +162,7 @@ h2 {
   user-select: none;
 }
 
-.slider img {
+.slider-layer {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -169,32 +172,46 @@ h2 {
   pointer-events: none;
 }
 
-.slider-before {
-  position: absolute;
-  inset: 0;
-  width: 50%;
-  overflow: hidden;
-  border-right: 2px solid rgba(255, 255, 255, 0.85);
+.slider-before-layer {
+  z-index: 1;
+  clip-path: inset(0 calc(100% - var(--pos)) 0 0);
 }
 
-.slider-handle {
+.slider-line {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 50%;
-  width: 28px;
-  margin-left: -14px;
-  cursor: ew-resize;
-  display: grid;
-  place-items: center;
+  left: var(--pos);
+  z-index: 2;
+  width: 3px;
+  margin-left: -1.5px;
+  background: #fff;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
-.slider-handle span {
-  width: 4px;
-  height: 42px;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+.slider-line::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.slider-range {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
 }
 
 .slider-labels {
@@ -238,8 +255,67 @@ h2 {
 .peak-card h3 { margin: 0 0 6px; font-size: 1rem; }
 .peak-card p { margin: 0; color: var(--muted); font-size: 14px; }
 
-.dating, .perception, .method {
+.dating, .replacement, .method {
   margin-top: 36px;
+}
+
+.replacement-summary {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.replacement-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.replacement h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.share-bars {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.share-bars li {
+  display: grid;
+  grid-template-columns: 110px 1fr 48px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.share-bars .track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.share-bars .fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.share-bars .fill.trees { background: var(--forest); }
+.share-bars .fill.crops { background: #c4a35a; }
+.share-bars .fill.rangeland { background: #8a6a3a; }
+.share-bars .fill.water { background: #3a6ea5; }
+
+.caveat {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .dating-grid {
@@ -391,7 +467,7 @@ h2 {
 
 @media (max-width: 760px) {
   .top { flex-direction: column; }
-  .dating-grid, .peak-card { grid-template-columns: 1fr; }
+  .dating-grid, .peak-card, .replacement-grid { grid-template-columns: 1fr; }
   .method dl { grid-template-columns: 1fr; }
 }
 
