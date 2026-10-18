@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 from perceptron import Client, image
 
-MODEL = "perceptron-mk1.5"
+MODEL = "perceptron-mk1.5"\
 KEY_FILE = os.path.expanduser("~/Desktop/perceptron-key.txt")
 PROMPT = (
     "The first image is an earlier Sentinel-2 satellite chip. The second is the same ground on a later date. "

@@ -41,7 +41,7 @@ On this submission, Clearcut's result is that the plot does not support approval
 
 ## Property intake
 
-On the map (`web/`), submit a plot three ways (segmented control, top-right):
+On the demo map (`web/demo.html`), submit a plot three ways (segmented control, top-right):
 
 1. **Box** — drag a rectangle  
 2. **Shape** — freehand-drag any polygon  

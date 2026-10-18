@@ -13,6 +13,7 @@ os.environ.setdefault("CPL_VSIL_CURL_ALLOWED_EXTENSIONS", ".tif")
 import argparse
 import json
 import math
+import shutil
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -252,6 +253,14 @@ def even_image(im):
     return im.crop((0, 0, max(2, w - w % 2), max(2, h - h % 2)))
 
 
+def ffmpeg_exe():
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    import imageio_ffmpeg
+    return imageio_ffmpeg.get_ffmpeg_exe()
+
+
 def make_video(frames, path):
     folder = path + ".frames"
     os.makedirs(folder, exist_ok=True)
@@ -259,7 +268,7 @@ def make_video(frames, path):
         even_image(frame).save(os.path.join(folder, f"{i:02d}.png"))
     subprocess.run(
         [
-            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            ffmpeg_exe(), "-y", "-hide_banner", "-loglevel", "error",
             "-framerate", "2", "-i", os.path.join(folder, "%02d.png"),
             "-c:v", "libx264", "-pix_fmt", "yuv420p", path,
         ],

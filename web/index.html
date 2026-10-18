@@ -3,137 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Clearcut</title>
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="styles.css">
+  <title>OpenCanopy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,560&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css">
 </head>
 <body>
-  <div id="map"></div>
+  <header class="bar">
+    <a class="brand" href="index.html">OpenCanopy</a>
+    <nav>
+      <a href="demo.html">Demo</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
 
-  <aside id="panel">
-    <header>
-      <h1>Clearcut</h1>
-      <p class="tagline">For social good.</p>
-      <p class="sub">An official check on a plantation submission. The government approves. Clearcut shows the record.</p>
-    </header>
-
-    <section id="view-submission" hidden>
-      <p class="plot-name">Plot KS-19, a fictional plantation.</p>
-      <p class="coords">Coordinates -0.78, 110.08.</p>
-      <p id="status" hidden></p>
-      <div id="finding"></div>
-      <h2>Selected chip</h2>
-      <p id="chip-empty">Click a chip on the map.</p>
-      <dl id="chip-readout" hidden>
-        <dt>Chip</dt>
-        <dd id="chip-id"></dd>
-        <dt>Perceptron</dt>
-        <dd id="chip-label"></dd>
-        <dt>Hansen loss share</dt>
-        <dd id="chip-hansen"></dd>
-        <dt>JRC forest share</dt>
-        <dd id="chip-jrc"></dd>
-        <dt>Result</dt>
-        <dd id="chip-result"></dd>
-      </dl>
-    </section>
-
-    <section id="view-unknown">
-      <p class="unknown-copy" id="unknown-copy">Draw a box, sketch a shape, or upload a boundary.</p>
-      <button id="analyze" type="button">Analyze this area</button>
-      <p id="analyze-note" class="hint"></p>
-    </section>
-
-    <section id="intake" class="intake">
-      <h2>Property intake</h2>
-      <p class="hint">Three ways in: draw a box, drag any shape, or upload GeoJSON / KML / GPX.</p>
-      <label class="file-button">
-        Choose file
-        <input id="intake-file" type="file" accept=".geojson,.json,.kml,.gpx,application/geo+json,application/json,application/vnd.google-earth.kml+xml">
-      </label>
-      <p id="intake-file-name" class="hint"></p>
-      <label class="stack-label">Paste GeoJSON
-        <textarea id="intake-paste" rows="4" spellcheck="false" placeholder='{"type":"Polygon","coordinates":[[[...]]]}'></textarea>
-      </label>
-      <div class="intake-actions">
-        <button id="intake-paste-btn" type="button">Use pasted GeoJSON</button>
-        <button id="intake-sample" type="button" class="ghost">Load sample plot</button>
+  <section class="stage">
+    <div>
+      <p class="eyebrow">EU deforestation regulation · 30 Dec 2026</p>
+      <h1>880 hectares, gone in one year.</h1>
+      <p class="lede">Forest through 2021. Cleared in 2023. Drag the scene. Large operators file under the EU rule on 30 December 2026.</p>
+      <div class="actions">
+        <a class="primary" href="demo.html">Open the demo</a>
+        <a href="about.html">How a check works</a>
       </div>
-      <p id="intake-note" class="hint"></p>
-      <div id="intake-features" class="intake-features" hidden>
-        <h3>Select a feature</h3>
-        <ul id="intake-feature-list"></ul>
-      </div>
-      <dl id="intake-selected" class="intake-selected" hidden>
-        <dt>Selected</dt>
-        <dd id="intake-selected-name"></dd>
-        <dt>Source</dt>
-        <dd id="intake-selected-source"></dd>
-      </dl>
-    </section>
+    </div>
+    <figure class="viewer compare" id="compare">
+      <img class="base" alt="The same plot in 2023, after the clearing" src="../data/plots/kalbar1/scene_2023.png">
+      <img class="cover" id="cover" alt="The same plot in 2021, still forest" src="../data/plots/kalbar1/scene_2021.png">
+      <input id="wipe" type="range" min="0" max="100" value="62" aria-label="Compare 2021 and 2023">
+      <figcaption class="hud">
+        <div>
+          <span>Plot KS-19 · fictional</span>
+          <strong>2021 → 2023</strong>
+        </div>
+        <span>West Kalimantan</span>
+      </figcaption>
+    </figure>
+  </section>
 
-    <h2>Fly to</h2>
-    <form id="fly-form">
-      <label>Lat
-        <input id="lat" name="lat" type="number" step="any" value="-0.78" inputmode="decimal">
-      </label>
-      <label>Lon
-        <input id="lon" name="lon" type="number" step="any" value="110.08" inputmode="decimal">
-      </label>
-      <button type="submit">Go</button>
-    </form>
-    <p id="fly-note" class="hint"></p>
-    <p class="hint">Draw box or shape on the map, then Analyze — or upload a boundary above.</p>
+  <section class="bento">
+    <article class="wide">
+      <em>01</em>
+      <h2>Draw the box</h2>
+      <p>The supplier names the land. The reviewer draws that rectangle, and nothing outside it is scored.</p>
+    </article>
+    <article>
+      <em>02</em>
+      <h2>Scrub the years</h2>
+      <p>2020 through the latest clear scene, one frame at a time.</p>
+    </article>
+    <article>
+      <em>03</em>
+      <h2>Read the record</h2>
+      <p>Forest in 2020, trees lost after, and a second opinion on whether the loss looks planted.</p>
+    </article>
+  </section>
+  <p class="note">A check can show post-2020 tree-cover loss consistent with plantation conversion. It is not a compliance finding.</p>
 
-    <h2>Legend</h2>
-    <ul class="legend">
-      <li><i class="swatch conv"></i> Confirmed conversion</li>
-      <li><i class="swatch forest"></i> Still forest</li>
-      <li><i class="swatch old"></i> Old plantation</li>
-      <li><i class="swatch inc"></i> Inconclusive</li>
-    </ul>
-  </aside>
-
-  <div id="tools" class="mode-toggle" role="radiogroup" aria-label="Property intake mode">
-    <span id="mode-float" class="mode-float" aria-hidden="true"></span>
-    <button id="tool-box" type="button" class="mode-option active" role="radio" aria-checked="true" aria-label="Draw box" title="Drag a rectangle around the plot">
-      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="4" y="4" width="16" height="16" rx="1" stroke-dasharray="3 3"></rect>
-        <path d="M17 17h3v3"></path>
-        <path d="M19.5 19.5 22 22"></path>
-      </svg>
-      <span class="mode-label">Box</span>
-    </button>
-    <button id="tool-shape" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Draw shape" title="Freehand-drag any property boundary">
-      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M7 6c2-2 5-2 7 0s3 5 1 7-5 3-7 1-3-5-1-7Z"></path>
-        <path d="M14 14c1.5 1 3 3 2.5 5"></path>
-      </svg>
-      <span class="mode-label">Shape</span>
-    </button>
-    <button id="tool-upload" type="button" class="mode-option" role="radio" aria-checked="false" aria-label="Upload boundary" title="Upload GeoJSON, KML, or GPX">
-      <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 16V5"></path>
-        <path d="m8 9 4-4 4 4"></path>
-        <path d="M4 19h16"></path>
-      </svg>
-      <span class="mode-label">Upload</span>
-    </button>
-    <button id="tool-pan" type="button" class="mode-option mode-pan" role="radio" aria-checked="false" aria-label="Pan map" title="Pan the map">
-      <span class="mode-label">Pan</span>
-    </button>
-  </div>
-
-  <div id="timebar">
-    <span id="scene-date">Draw a box</span>
-    <input id="time" type="range" min="0" max="1" step="1" value="1" aria-label="Image date">
-    <label id="overlay-label">Overlay
-      <input id="overlay" type="range" min="0" max="100" value="55" aria-label="Overlay opacity">
-    </label>
-  </div>
-
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="intake.js"></script>
-  <script src="app.js"></script>
+  <script>
+    const wipe = document.getElementById("wipe");
+    const cover = document.getElementById("cover");
+    function paint() {
+      cover.style.clipPath = "inset(0 " + (100 - Number(wipe.value)) + "% 0 0)";
+    }
+    wipe.addEventListener("input", paint);
+    paint();
+  </script>
 </body>
 </html>

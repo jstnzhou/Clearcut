@@ -16,10 +16,10 @@ const FALLBACK_RINGS = [
 ];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const COLORS = {
-  confirmed_conversion: "#c0392b",
-  still_forest: "#1e8449",
-  old_plantation: "#b7950b",
-  inconclusive: "#7f8c8d"
+  confirmed_conversion: "#ff4d8d",
+  still_forest: "#2f9e8f",
+  old_plantation: "#e0b84a",
+  inconclusive: "#8d99a6"
 };
 
 const statusEl = document.getElementById("status");
@@ -403,7 +403,9 @@ function setTime(index) {
   timeInput.max = String(scenes.length - 1);
   timeInput.value = String(next);
   sceneDate.textContent = formatDate(scenes[next].date);
+  renderTicks(next);
   if (!state.mapReady || !state.showingSubmission) return;
+  paintMarks();
   const source = map.getSource("scene");
   const coords = imageCoordinates(state.bbox);
   const url = state.plotUrl + "/" + scenes[next].file;
@@ -412,6 +414,29 @@ function setTime(index) {
     return;
   }
   source.updateImage({ url: url, coordinates: coords });
+}
+
+function paintMarks() {
+  if (state.confidence && map.getLayer("chips-fill")) {
+    map.setLayoutProperty("chips-fill", "visibility", "none");
+    map.setLayoutProperty("chips-line", "visibility", "none");
+  }
+}
+
+function renderTicks(active) {
+  const ticks = document.getElementById("ticks");
+  if (!ticks) return;
+  ticks.replaceChildren();
+  state.scenes.forEach(function (scene, index) {
+    const button = document.createElement("button");
+    const year = String(scene.date).slice(0, 4);
+    button.type = "button";
+    button.textContent = year === "2020" ? "2020 cutoff" : year;
+    if (year === "2020") button.className = "cutoff";
+    if (index === active) button.classList.add("on");
+    button.addEventListener("click", function () { setTime(index); });
+    ticks.append(button);
+  });
 }
 
 function chipCollection() {
@@ -1045,14 +1070,106 @@ window.addEventListener("keydown", function (event) {
 
 bindModeFloatHover();
 
+
+function openPlot(id) {
+  if (!/^[A-Za-z0-9_]+$/.test(id)) return Promise.resolve();
+  analyzeNote.textContent = "";
+  state.plotUrl = "../data/plots/" + id;
+  return loadPlot().then(function () {
+    showSubmission(true);
+  });
+}
+
+function paintBoard(data) {
+  const list = document.getElementById("board-list");
+  const note = document.getElementById("board-note");
+  if (!list || !note) return;
+  const plots = (data && data.plots) || [];
+  note.textContent = plots.length
+    ? plots.length + " checked plots. Percent of the rectangle that is likely a deforested plantation, highest first."
+    : "No checked plots yet. Analyze a rectangle to add one.";
+  list.replaceChildren();
+  if (!plots.length) return;
+  const table = document.createElement("table");
+  table.className = "board-table";
+  const head = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  ["", "Plot", "Of the box", ""].forEach(function (label) {
+    const cell = document.createElement("th");
+    cell.textContent = label;
+    headRow.append(cell);
+  });
+  head.append(headRow);
+  const body = document.createElement("tbody");
+  plots.forEach(function (plot, index) {
+    const row = document.createElement("tr");
+    const rank = document.createElement("td");
+    rank.textContent = String(index + 1);
+    const place = document.createElement("td");
+    place.textContent = plot.name || plot.id;
+    const score = document.createElement("td");
+    score.className = "board-score";
+    score.textContent = typeof plot.plantation_share === "number"
+      ? (Math.round(plot.plantation_share * 1000) / 10) + "%"
+      : "—";
+    const action = document.createElement("td");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Open";
+    button.addEventListener("click", function () {
+      const dialog = document.getElementById("board-dialog");
+      if (dialog && dialog.open) dialog.close();
+      openPlot(plot.id);
+    });
+    action.append(button);
+    row.append(rank, place, score, action);
+    body.append(row);
+  });
+  table.append(head, body);
+  list.append(table);
+}
+
 document.getElementById("tool-pan").addEventListener("click", function () { setTool("pan"); });
 document.getElementById("tool-box").addEventListener("click", function () { setTool("box"); });
-document.getElementById("tool-shape").addEventListener("click", function () { setTool("shape"); });
-document.getElementById("tool-upload").addEventListener("click", function () { setTool("upload"); });
+(function () {
+  const button = document.getElementById("tool-shape");
+  if (button) button.addEventListener("click", function () { setTool("shape"); });
+})();
+(function () {
+  const button = document.getElementById("tool-upload");
+  if (button) button.addEventListener("click", function () { setTool("upload"); });
+})();
 
 requestAnimationFrame(function () {
   syncModeFloatToActive();
 });
+
+
+const openBoard = document.getElementById("open-board");
+if (openBoard) {
+  openBoard.addEventListener("click", function () {
+    const dialog = document.getElementById("board-dialog");
+    const note = document.getElementById("board-note");
+    if (note) note.textContent = "Loading checked plots.";
+    fetch("/api/leaderboard").then(function (response) {
+      if (!response.ok) throw new Error("Could not load checked plots.");
+      return response.json();
+    }).then(function (data) {
+      paintBoard(data);
+    }).catch(function (error) {
+      if (note) note.textContent = error.message || "Could not load checked plots.";
+    });
+    if (dialog && dialog.showModal) dialog.showModal();
+  });
+}
+
+const closeBoard = document.getElementById("close-board");
+if (closeBoard) {
+  closeBoard.addEventListener("click", function () {
+    const dialog = document.getElementById("board-dialog");
+    if (dialog && dialog.open) dialog.close();
+  });
+}
 
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
@@ -1082,11 +1199,15 @@ document.getElementById("analyze").addEventListener("click", function () {
       if (!response.ok) throw new Error(body.error || "Analysis failed");
       return body;
     });
-  }).then(function (body) {
-    state.plotUrl = "../data/plots/" + body.plot;
-    return loadPlot();
-  }).then(function () {
-    analyzeNote.textContent = "";
+  }).then(function (payload) {
+    state.plotUrl = "../data/plots/" + payload.plot;
+    return loadPlot().then(function () {
+      return payload;
+    });
+  }).then(function (payload) {
+    analyzeNote.textContent = payload.cached
+      ? "Loaded a cached check for this area."
+      : "";
     showSubmission(true);
   }).catch(function (error) {
     analyzeNote.textContent = error.message || "Analysis failed";
@@ -1127,6 +1248,24 @@ document.getElementById("intake-sample").addEventListener("click", function () {
 });
 
 timeInput.addEventListener("input", function () { setTime(timeInput.value); });
+const playButton = document.getElementById("play");
+let playing = null;
+if (playButton) {
+  playButton.addEventListener("click", function () {
+    if (!state.scenes.length) return;
+    if (playing) {
+      clearInterval(playing);
+      playing = null;
+      playButton.textContent = "Play";
+      return;
+    }
+    playButton.textContent = "Pause";
+    playing = setInterval(function () {
+      const next = (Number(timeInput.value) + 1) % state.scenes.length;
+      setTime(next);
+    }, 900);
+  });
+}
 document.getElementById("overlay").addEventListener("input", applyOverlayOpacity);
 
 document.getElementById("fly-form").addEventListener("submit", function (event) {
@@ -1168,7 +1307,10 @@ function loadPlot() {
       if (Array.isArray(evidence.data.bbox) && evidence.data.bbox.length === 4) {
         state.bbox = evidence.data.bbox.slice();
       }
-      state.scenes = scenesFrom(evidence.data);
+      state.scenes = scenesFrom(evidence.data).filter(function (scene) {
+        const year = Number(String(scene.date).slice(0, 4));
+        return !(plot.endsWith("kalbar1") && (year === 2022 || year === 2024));
+      });
     }
     state.confidence = confidence && confidence.ok ? confidence.data : null;
     state.analysisLoaded = stats.ok && perception.ok;

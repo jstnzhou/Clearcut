@@ -1,3 +1,4 @@
+imageio-ffmpeg
 pystac-client
 planetary-computer
 rasterio
