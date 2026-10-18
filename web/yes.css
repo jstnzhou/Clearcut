@@ -1,0 +1,142 @@
+.yes-main {
+  padding: 108px clamp(16px, 4vw, 48px) 88px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.yes-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 0 56px;
+  background: var(--line-dark);
+  border: 1px solid var(--line-dark);
+}
+
+.yes-stats div {
+  margin: 0;
+  padding: 22px 22px 24px;
+  background: var(--ink);
+}
+
+.yes-stats dt {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--moss-soft);
+}
+
+.yes-stats dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 440;
+  font-size: clamp(28px, 3vw, 40px);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.yes-stats p {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(246, 244, 236, 0.68);
+}
+
+.yes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.yes-main h1 {
+  margin: 10px 0 12px;
+  font-family: var(--serif);
+  font-weight: 520;
+  font-size: clamp(36px, 5vw, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.yes-lead {
+  max-width: 62ch;
+  margin: 0 0 40px;
+  color: rgba(246, 244, 236, 0.78);
+  font-size: 17px;
+}
+
+.yes-main h2 {
+  margin: 48px 0 18px;
+  font-family: var(--serif);
+  font-weight: 520;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+.pair {
+  margin: 0;
+  padding: 28px 0 32px;
+  border-top: 1px solid var(--line-dark);
+}
+
+.pair header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.pair h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 520;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.pair .ha {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--moss-soft);
+  white-space: nowrap;
+}
+
+.pair .coords {
+  margin: -6px 0 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: rgba(246, 244, 236, 0.62);
+}
+
+.frames {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.frames figure {
+  margin: 0;
+}
+
+.frames img {
+  width: 100%;
+  height: auto;
+  background: #000;
+}
+
+.frames figcaption {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(246, 244, 236, 0.62);
+}
+
+@media (max-width: 900px) {
+  .yes-stats { grid-template-columns: 1fr; }
+  .frames { grid-template-columns: 1fr; }
+  .pair header { flex-direction: column; gap: 4px; }
+}

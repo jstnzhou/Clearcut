@@ -342,10 +342,21 @@ button.ghost:hover {
 }
 
 .site-bar .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   color: inherit;
   text-decoration: none;
   font-size: 20px;
-  letter-spacing: -0.03em;
+  font-weight: 540;
+  letter-spacing: -0.01em;
+}
+
+.site-bar .brand .mark {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: block;
 }
 
 .site-bar nav {
@@ -490,6 +501,89 @@ body.demo #tools { top: 60px; }
 
 #tools .mode-pan .mode-label {
   padding: 0 2px;
+}
+
+.processing {
+  position: absolute;
+  z-index: 4;
+  left: var(--panel);
+  right: 0;
+  bottom: calc(var(--timebar) + 18px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.processing[hidden] {
+  display: none !important;
+}
+
+.processing-bar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 168px;
+  padding: 10px 16px 14px;
+  color: #132018;
+  background: #f3f6f1;
+  border: 1px solid rgba(19, 32, 24, 0.12);
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  animation: processing-in 0.22s ease-out;
+}
+
+.processing-bar .spinner {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(19, 32, 24, 0.2);
+  border-top-color: #132018;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.processing-track {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 6px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(19, 32, 24, 0.12);
+}
+
+.processing-track i {
+  display: block;
+  width: 36%;
+  height: 100%;
+  border-radius: inherit;
+  background: #132018;
+  animation: processing-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes processing-slide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
+@keyframes processing-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 #timebar {

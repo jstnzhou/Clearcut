@@ -7,20 +7,24 @@
   <meta name="description" content="An independent satellite check a government can run when a plantation asks to be approved.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..500&family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,380;9..144,440;9..144,540&family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/logo/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/logo/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/logo/apple-touch-icon.png">
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="story.css">
 </head>
 <body class="story">
   <header class="topbar">
     <a class="wordmark" href="index.html" aria-label="OpenCanopy home">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="2"/><path d="M2.5 13.5h19M9 13.5V21.5M15 13.5V21.5"/></svg>
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M8 15 L30 6 L42 18"/><path d="M38 40 L14 42 L8 15"/></g><path d="M42 18 L38 40" stroke="#ec4c2e" stroke-width="2.8" stroke-linecap="round"/><circle cx="24" cy="24" r="7.5" fill="currentColor"/><rect x="22.6" y="29" width="2.8" height="6" fill="currentColor"/><g fill="currentColor"><circle cx="8" cy="15" r="2.8"/><circle cx="30" cy="6" r="2.8"/><circle cx="14" cy="42" r="2.8"/></g><g fill="#ec4c2e"><circle cx="42" cy="18" r="2.8"/><circle cx="38" cy="40" r="2.8"/></g></svg>
       OpenCanopy
     </a>
     <nav>
       <a href="#method">Method</a>
       <a href="#limits">Limits</a>
       <a href="#sources">Sources</a>
+      <a href="yes.html">Impact</a>
       <a href="demo.html">Demo</a>
       <a class="nav-cta" href="case.html">Open the case file</a>
     </nav>
@@ -60,7 +64,6 @@
           </div>
           <div class="callout" data-for="river" aria-hidden="true"><i></i><span>River, unchanged</span></div>
           <div class="callout right" data-for="roads" aria-hidden="true"><i></i><span>Straight access roads</span></div>
-          <div class="callout" data-for="smoke" aria-hidden="true"><i></i><span>Smoke. Not in the loss record.</span></div>
         </div>
         <figcaption class="hud mono">
           <span id="hud-date">14 Sep 2019</span>
@@ -200,7 +203,10 @@
 
   <footer class="foot">
     <div>
-      <a class="wordmark" href="index.html">OpenCanopy</a>
+      <a class="wordmark" href="index.html">
+        <svg class="mark" viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M8 15 L30 6 L42 18"/><path d="M38 40 L14 42 L8 15"/></g><path d="M42 18 L38 40" stroke="#ec4c2e" stroke-width="2.8" stroke-linecap="round"/><circle cx="24" cy="24" r="7.5" fill="currentColor"/><rect x="22.6" y="29" width="2.8" height="6" fill="currentColor"/><g fill="currentColor"><circle cx="8" cy="15" r="2.8"/><circle cx="30" cy="6" r="2.8"/><circle cx="14" cy="42" r="2.8"/></g><g fill="#ec4c2e"><circle cx="42" cy="18" r="2.8"/><circle cx="38" cy="40" r="2.8"/></g></svg>
+        OpenCanopy
+      </a>
       <p>Built at DubHacks 2026.</p>
     </div>
     <a class="btn primary" href="case.html">Open the case file <span aria-hidden="true">→</span></a>

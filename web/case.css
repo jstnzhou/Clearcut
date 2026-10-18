@@ -44,7 +44,25 @@ body.case {
   text-transform: uppercase;
 }
 
-.running-brand { color: var(--paper); text-decoration: none; font-weight: 500; }
+.running-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--paper);
+  text-decoration: none;
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 540;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.running-brand .mark {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: block;
+}
 
 .masthead {
   width: var(--page);
