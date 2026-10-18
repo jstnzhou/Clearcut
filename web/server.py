@@ -18,6 +18,24 @@ if not PYTHON.is_file():
 PORT = 8765
 
 
+def load_dotenv(path: Path = ROOT / ".env") -> None:
+    """Load KEY=VALUE pairs into os.environ without overriding existing values."""
+    if not path.is_file():
+        return
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'").strip('"')
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+load_dotenv()
+
+
 def ring_bbox(ring):
     lons = [pt[0] for pt in ring if isinstance(pt, (list, tuple)) and len(pt) >= 2]
     lats = [pt[1] for pt in ring if isinstance(pt, (list, tuple)) and len(pt) >= 2]
