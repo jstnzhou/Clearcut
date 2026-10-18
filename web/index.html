@@ -17,7 +17,7 @@
       <p class="sub">An official check on a plantation submission. The government approves. Clearcut shows the record.</p>
     </header>
 
-    <section id="view-submission">
+    <section id="view-submission" hidden>
       <p class="plot-name">Plot KS-19, a fictional plantation.</p>
       <p class="coords">Coordinates -0.78, 110.08.</p>
       <p id="status" hidden></p>
@@ -38,23 +38,10 @@
       </dl>
     </section>
 
-    <section id="view-unknown" hidden>
-      <p class="unknown-copy">This rectangle is drawn. Analyze downloads a satellite scene for each year from 2019 through 2026, then Perceptron compares the first and the last.</p>
+    <section id="view-unknown">
+      <p class="unknown-copy">Draw a rectangle on the map, then analyze it.</p>
       <button id="analyze" type="button">Analyze this area</button>
-      <label class="check">
-        <input id="use-perceptron" type="checkbox">
-        Perceptron
-      </label>
-      <label class="check">
-        <input id="use-forest" type="checkbox" checked>
-        2020 forest
-      </label>
-      <label class="check">
-        <input id="use-loss" type="checkbox" checked>
-        Tree loss since 2020
-      </label>
       <p id="analyze-note" class="hint"></p>
-      <button id="show-kalbar" type="button">Show the Kalimantan submission</button>
     </section>
 
     <h2>Fly to</h2>
@@ -85,7 +72,7 @@
   </div>
 
   <div id="timebar">
-    <span id="scene-date">8 Aug 2026</span>
+    <span id="scene-date">Draw a box</span>
     <input id="time" type="range" min="0" max="1" step="1" value="1" aria-label="Image date">
     <label id="overlay-label">Overlay
       <input id="overlay" type="range" min="0" max="100" value="55" aria-label="Overlay opacity">

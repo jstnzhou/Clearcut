@@ -50,12 +50,6 @@ class Handler(SimpleHTTPRequestHandler):
         bbox_arg = ",".join(str(v) for v in bbox)
         env = os.environ.copy()
         cmd = [str(PYTHON), "pipeline/analyze_fast.py", "--bbox", bbox_arg, "--out", str(plot)]
-        if not body.get("perceptron", True):
-            cmd.append("--no-perceptron")
-        if not body.get("forest", True):
-            cmd.append("--no-forest")
-        if not body.get("loss", True):
-            cmd.append("--no-loss")
         steps = [cmd]
         for cmd in steps:
             run = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, timeout=180)
