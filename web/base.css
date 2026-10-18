@@ -1,0 +1,137 @@
+/* Tokens and pieces shared by the story (dark) and the case file (paper). */
+
+:root {
+  --ink: #0d1a14;
+  --ink-2: #14261d;
+  --ink-3: #1c3328;
+  --paper: #f2efe6;
+  --paper-2: #e8e3d5;
+  --paper-3: #dcd5c2;
+  --bone: #f6f4ec;
+  --moss: #6f9a5c;
+  --moss-soft: #a9c49a;
+  --loss: #ec4c2e;
+  --loss-ink: #b5341c;
+  --doubt: #8fb3c9;
+  --doubt-ink: #3f6479;
+  --line-dark: rgba(246, 244, 236, 0.14);
+  --line-paper: rgba(13, 26, 20, 0.16);
+
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius: 6px;
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  font-feature-settings: "ss01", "cv11";
+}
+
+img { display: block; max-width: 100%; }
+
+a { color: inherit; }
+
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Status tags. Confirmed is solid, inconclusive is hatched so it reads without color. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 7px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+}
+
+.tag::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.tag.confirmed { color: var(--loss-ink); background: rgba(236, 76, 46, 0.1); }
+.tag.inconclusive { color: var(--doubt-ink); background: rgba(143, 179, 201, 0.16); }
+.tag.inconclusive::before {
+  background: repeating-linear-gradient(45deg, currentColor 0 2px, transparent 2px 4px);
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
+}
+.tag.forest { color: #3f6a2f; background: rgba(111, 154, 92, 0.14); }
+
+/* The satellite frame. Layers stack exactly over one another. */
+.frame {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #0a140f;
+  isolation: isolate;
+}
+
+.frame > .layer,
+.frame > canvas,
+.frame > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.frame > .layer { object-fit: cover; }
+
+.frame > canvas {
+  image-rendering: pixelated;
+  mix-blend-mode: normal;
+}
+
+.regions .region {
+  fill: none;
+  stroke-width: 2.5;
+}
+.regions .region.confirmed { stroke: var(--loss); fill: rgba(236, 76, 46, 0.12); }
+.regions .region.inconclusive { stroke: var(--doubt); stroke-dasharray: 7 5; }
+.regions .hatch-line { stroke: var(--doubt); stroke-width: 3; opacity: 0.7; }
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

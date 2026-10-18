@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Case KS-19 · OpenCanopy</title>
+  <meta name="description" content="OpenCanopy evidence record for submitted plot KS-19, West Kalimantan.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..500&family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="case.css">
+</head>
+<body class="case">
+  <div class="running mono">
+    <a href="index.html" class="running-brand">OpenCanopy</a>
+    <span>Evidence record</span>
+    <span>Case KS-19</span>
+    <span class="hide-sm">Cutoff 31 Dec 2020</span>
+    <span class="hide-sm" id="fingerprint" title="SHA-256 of this plot's evidence.json">sha256 ········</span>
+  </div>
+
+  <header class="masthead">
+    <div class="mast-main">
+      <p class="eyebrow">Submitted plot · fictional applicant</p>
+      <h1>Case KS-19</h1>
+      <p class="mast-place">West Kalimantan, Indonesia · <span class="mono" id="coords">0.7800° S, 110.0800° E</span> · <span class="mono" id="area">4,440 ha</span></p>
+      <div class="mast-actions">
+        <button class="btn" type="button" id="print">Print evidence pack</button>
+        <button class="btn quiet" type="button" id="copy">Copy link</button>
+        <a class="btn quiet" href="demo.html">Check another plot <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div class="locator" id="locator" role="img" aria-label="Locator map: the plot sits in West Kalimantan, on the island of Borneo."></div>
+  </header>
+
+  <section class="finding" aria-labelledby="finding-title">
+    <div class="finding-head">
+      <span class="stamp mono">Does not support approval</span>
+      <p class="not-verdict">This is a satellite record, not a compliance finding. The government decides.</p>
+    </div>
+    <h2 id="finding-title" class="finding-sentence">“This plot shows post-2020 tree-cover loss consistent with plantation conversion.”</h2>
+    <div class="chips">
+      <div class="chip">
+        <span class="chip-k mono">When</span>
+        <strong id="chip-when">2023</strong>
+        <span id="chip-when-sub">20% of the plot lost. Hansen loss ends 2024.</span>
+      </div>
+      <div class="chip">
+        <span class="chip-k mono">What it looks like now</span>
+        <strong>Rows, roads, blocks</strong>
+        <span>Sentinel-2, 8 Aug 2026. Read by the vision model.</span>
+      </div>
+      <div class="chip">
+        <span class="chip-k mono">Cross-check</span>
+        <strong id="chip-check">1 confirmed · 1 inconclusive</strong>
+        <span>Confirmed needs ≥25% post-2020 loss inside the region.</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="exhibits">
+    <section class="exhibit" id="e1" aria-labelledby="e1-title">
+      <header class="ex-head">
+        <span class="ex-num mono">E1</span>
+        <h3 id="e1-title">Imagery, before and after the cutoff</h3>
+        <div class="seg" role="tablist" aria-label="View mode">
+          <button type="button" role="tab" data-mode="compare" aria-selected="true">Compare</button>
+          <button type="button" role="tab" data-mode="flicker" aria-selected="false">Flicker</button>
+          <button type="button" role="tab" data-mode="single" aria-selected="false">One year</button>
+        </div>
+      </header>
+
+      <div class="viewer-wrap">
+        <figure class="viewer">
+          <div class="frame" id="viewer">
+            <img class="layer after" id="img-after" alt="">
+            <img class="layer before" id="img-before" alt="">
+            <canvas id="viewer-loss" aria-hidden="true"></canvas>
+            <span class="side-label left mono" id="label-before">2019</span>
+            <span class="side-label right mono" id="label-after">2026</span>
+            <div class="divider" aria-hidden="true"><span></span></div>
+            <input class="wipe" id="wipe" type="range" min="0" max="100" value="50" aria-label="Move the divider between the earlier and later image">
+          </div>
+          <figcaption class="prov mono" id="prov"></figcaption>
+        </figure>
+
+        <aside class="viewer-side">
+          <fieldset class="toggles">
+            <legend class="mono">Layers</legend>
+            <label><input type="checkbox" id="t-loss" checked> <i class="sw loss"></i> Loss after 2020</label>
+            <label><input type="checkbox" id="t-old"> <i class="sw old"></i> Loss before 2021</label>
+            <label><input type="checkbox" id="t-regions" checked> <i class="sw conf"></i> Model regions</label>
+            <label><input type="checkbox" id="t-outline"> Outlines only</label>
+          </fieldset>
+          <dl class="legend-note">
+            <div><dt><span class="tag confirmed">Confirmed</span></dt><dd>Model and loss map agree.</dd></div>
+            <div><dt><span class="tag inconclusive">Inconclusive</span></dt><dd>They do not. A person reviews it.</dd></div>
+          </dl>
+          <p class="keys mono"><kbd>←</kbd><kbd>→</kbd> step years · <kbd>F</kbd> flicker</p>
+        </aside>
+      </div>
+
+      <div class="timeline" aria-label="Scenes on file">
+        <div class="timeline-rail" id="rail"></div>
+        <p class="timeline-note mono"><span class="bar-key"></span> Hansen loss that year, share of plot · dashed rule is the cutoff</p>
+      </div>
+    </section>
+
+    <section class="exhibit" id="e2" aria-labelledby="e2-title">
+      <header class="ex-head">
+        <span class="ex-num mono">E2</span>
+        <h3 id="e2-title">Loss year, Hansen Global Forest Change</h3>
+      </header>
+      <div class="loss-grid">
+        <div class="big-stat">
+          <strong class="mono" id="stat-ha">880</strong>
+          <span>hectares of tree cover lost after 31 Dec 2020</span>
+          <em class="mono" id="stat-share">19.9% of the plot · 99% of it in 2023</em>
+        </div>
+        <figure class="loss-chart">
+          <div class="chart" id="chart" role="img"></div>
+          <figcaption class="mono">Share of the plot lost each year, 2001–2024. Grey: before the cutoff. Red: after.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="exhibit" id="e3" aria-labelledby="e3-title">
+      <header class="ex-head">
+        <span class="ex-num mono">E3</span>
+        <h3 id="e3-title">Regions the model marked, cross-checked</h3>
+      </header>
+      <blockquote class="model-quote">
+        <p>“By 2026, a significant transformation has occurred in the lower-left quadrant of the image. The previously uniform forest has been cleared and replaced with a highly organized agricultural area.”</p>
+        <cite class="mono">Perceptron Mk1.5, reading the 2019 and 2026 scenes</cite>
+      </blockquote>
+      <div class="region-cards" id="region-cards"></div>
+    </section>
+
+    <section class="exhibit" id="e4" aria-labelledby="e4-title">
+      <header class="ex-head">
+        <span class="ex-num mono">E4</span>
+        <h3 id="e4-title">Limits of this record</h3>
+      </header>
+      <ul class="limits">
+        <li>The loss map ends in 2024. The 2025 and 2026 images show what the land is now. They are not detections.</li>
+        <li>Smoke crosses the 2026 scene. It is not in the loss record and is not counted.</li>
+        <li>Region outlines come from a vision model. They are only confirmed where the loss map agrees.</li>
+        <li>Legality under Indonesian law, and what product came from this plot, are outside this check.</li>
+      </ul>
+    </section>
+
+    <section class="exhibit" id="e5" aria-labelledby="e5-title">
+      <header class="ex-head">
+        <span class="ex-num mono">E5</span>
+        <h3 id="e5-title">Provenance</h3>
+      </header>
+      <div class="table-wrap">
+        <table class="prov-table mono" id="prov-table">
+          <thead><tr><th>Date</th><th>Sentinel-2 scene</th><th>Cloud</th><th>NDVI</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="fine">Loss year: Hansen GFC-2024-v1.12, tile 00N_110E. Forest in 2020: JRC Global Forest Cover 2020 v4. Imagery via Microsoft Planetary Computer. Plot KS-19 is fictional; the coordinates and the landscape are real.</p>
+    </section>
+  </main>
+
+  <footer class="case-foot mono">
+    <span>OpenCanopy · DubHacks 2026</span>
+    <a href="index.html">How a check works</a>
+  </footer>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="plot.js"></script>
+  <script src="case.js"></script>
+</body>
+</html>

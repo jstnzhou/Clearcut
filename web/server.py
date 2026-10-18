@@ -232,9 +232,10 @@ def record_plot(path, hit):
 
 
 def leaderboard():
-    if not INDEX.is_file():
-        return rebuild_leaderboard()
     data = _load_index()
+    stale = not INDEX.is_file() or any("plantation_share" not in row for row in data["plots"])
+    if stale:
+        return rebuild_leaderboard()
     data["plots"] = sorted(
         data["plots"],
         key=lambda row: (row.get("plantation_share") is None, -(row.get("plantation_share") or 0)),

@@ -5,10 +5,10 @@
   --muted: #a39e94;
   --line: rgba(255, 255, 255, 0.12);
   --bg: rgba(14, 16, 18, 0.92);
-  --conv: #ff4d8d;
-  --forest: #2f9e8f;
-  --old: #e0b84a;
-  --inc: #8d99a6;
+  --conv: #c0392b;
+  --forest: #1e8449;
+  --old: #b7950b;
+  --inc: #7f8c8d;
 }
 
 * {
@@ -117,6 +117,7 @@ h2 {
   flex-wrap: wrap;
   gap: 8px;
   align-items: flex-end;
+  margin-top: 16px;
 }
 
 #fly-form label {
@@ -127,6 +128,7 @@ h2 {
   color: var(--muted);
 }
 
+input[type="text"],
 input[type="number"] {
   width: 108px;
   padding: 7px 8px;
@@ -394,10 +396,8 @@ body.demo #tools { top: 60px; }
   border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
-.swatch.conv { background: var(--conv); }
-.swatch.forest { background: var(--forest); }
-.swatch.old { background: var(--old); }
-.swatch.inc { background: var(--inc); }
+.swatch.loss { background: #c0392b; }
+.swatch.forest { background: #1e8449; }
 
 #chip-readout {
   display: grid;
