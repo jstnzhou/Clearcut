@@ -46,9 +46,11 @@ const state = {
   analysisLoaded: false,
   showingSubmission: false,
   selectedId: null,
+  tool: "box", // pan | box | shape
   drawMode: true,
   drawing: false,
   dragStart: null,
+  shapePoints: [],
   draftBbox: null,
   draftGeometry: null,
   draftFeature: null,
@@ -478,6 +480,79 @@ function setDraft(feature) {
   map.getSource("draft").setData(feature ? { type: "FeatureCollection", features: [feature] } : emptyCollection());
 }
 
+function setSketch(data) {
+  if (!state.mapReady || !map.getSource("sketch")) return;
+  map.getSource("sketch").setData(data || emptyCollection());
+}
+
+function clearIntakeList() {
+  state.intakeItems = [];
+  state.intakeSelectedId = null;
+  state.intakeFilename = null;
+  if (intakeFeatureBox) intakeFeatureBox.hidden = true;
+  if (intakeFileName) intakeFileName.textContent = "";
+  updateIntakeSelected();
+}
+
+function distanceMeters(a, b) {
+  const toRad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * toRad;
+  const dLon = (b.lng - a.lng) * toRad;
+  const lat1 = a.lat * toRad;
+  const lat2 = b.lat * toRad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 6371000 * 2 * Math.asin(Math.sqrt(h));
+}
+
+function simplifyPoints(points, minMeters) {
+  if (points.length < 3) return points.slice();
+  const out = [points[0]];
+  for (let i = 1; i < points.length; i += 1) {
+    if (distanceMeters(out[out.length - 1], points[i]) >= minMeters) out.push(points[i]);
+  }
+  if (out.length < 2) out.push(points[points.length - 1]);
+  else if (distanceMeters(out[out.length - 1], points[points.length - 1]) > 1) {
+    out.push(points[points.length - 1]);
+  }
+  return out;
+}
+
+function polygonFromPoints(points) {
+  const cleaned = simplifyPoints(points, 12);
+  if (cleaned.length < 3) return null;
+  const ring = cleaned.map(function (pt) { return [pt.lng, pt.lat]; });
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (first[0] !== last[0] || first[1] !== last[1]) ring.push(first.slice());
+  if (ring.length < 4) return null;
+  const bbox = window.ClearcutIntake.ringBBox(ring);
+  if (!bbox) return null;
+  const feature = {
+    type: "Feature",
+    properties: { name: "Drawn shape" },
+    geometry: { type: "Polygon", coordinates: [ring] }
+  };
+  return { feature: feature, bbox: bbox };
+}
+
+function sketchCollection(points, closed) {
+  if (!points.length) return emptyCollection();
+  const line = points.map(function (pt) { return [pt.lng, pt.lat]; });
+  const features = [{
+    type: "Feature",
+    properties: {},
+    geometry: { type: "LineString", coordinates: closed && line.length ? line.concat([line[0]]) : line }
+  }];
+  points.forEach(function (pt) {
+    features.push({
+      type: "Feature",
+      properties: {},
+      geometry: { type: "Point", coordinates: [pt.lng, pt.lat] }
+    });
+  });
+  return { type: "FeatureCollection", features: features };
+}
+
 function displaySubmission() {
   state.showingSubmission = true;
   state.selectedId = null;
@@ -655,14 +730,30 @@ function eventLngLat(event) {
   return map.unproject([event.clientX - rect.left, event.clientY - rect.top]);
 }
 
-function setDrawMode(on) {
-  state.drawMode = on;
-  document.getElementById("tool-box").classList.toggle("active", on);
-  document.getElementById("tool-pan").classList.toggle("active", !on);
+function setTool(tool) {
+  state.tool = tool;
+  state.drawMode = tool === "box" || tool === "shape";
+  state.drawing = false;
+  state.dragStart = null;
+  state.shapePoints = [];
+  setSketch(emptyCollection());
+  document.getElementById("tool-pan").classList.toggle("active", tool === "pan");
+  document.getElementById("tool-box").classList.toggle("active", tool === "box");
+  document.getElementById("tool-shape").classList.toggle("active", tool === "shape");
+  const copy = document.getElementById("unknown-copy");
+  if (copy && !state.showingSubmission) {
+    if (tool === "shape") copy.textContent = "Drag any shape around the property, then analyze.";
+    else if (tool === "box") copy.textContent = "Draw a box, sketch a shape, or upload a boundary.";
+    else copy.textContent = "Pan the map, or choose Draw box / Draw shape.";
+  }
   if (!state.mapReady) return;
-  if (on) map.dragPan.disable();
+  if (state.drawMode) map.dragPan.disable();
   else map.dragPan.enable();
-  map.getCanvas().style.cursor = on ? "crosshair" : "";
+  map.getCanvas().style.cursor = state.drawMode ? "crosshair" : "";
+}
+
+function setDrawMode(on) {
+  setTool(on ? "box" : "pan");
 }
 
 let map = null;
@@ -758,9 +849,29 @@ map.on("load", function () {
     source: "draft",
     paint: { "line-color": "#ffffff", "line-width": 2, "line-dasharray": [1.5, 1] }
   });
+  map.addSource("sketch", { type: "geojson", data: emptyCollection() });
+  map.addLayer({
+    id: "sketch-line",
+    type: "line",
+    source: "sketch",
+    filter: ["==", ["geometry-type"], "LineString"],
+    paint: { "line-color": "#ffffff", "line-width": 2.5 }
+  });
+  map.addLayer({
+    id: "sketch-points",
+    type: "circle",
+    source: "sketch",
+    filter: ["==", ["geometry-type"], "Point"],
+    paint: {
+      "circle-radius": 3.5,
+      "circle-color": "#ffffff",
+      "circle-stroke-width": 1,
+      "circle-stroke-color": "#16181b"
+    }
+  });
 
   state.mapReady = true;
-  setDrawMode(true);
+  setTool("box");
   map.fitBounds(
     [[KALBAR_BBOX[0], KALBAR_BBOX[1]], [KALBAR_BBOX[2], KALBAR_BBOX[3]]],
     { padding: fitPadding(), maxZoom: 13, duration: 0 }
@@ -772,33 +883,70 @@ map.on("mousedown", function (event) {
   if (!state.drawMode || event.originalEvent.button !== 0) return;
   state.drawing = true;
   state.dragStart = event.lngLat;
+  if (state.tool === "shape") {
+    state.shapePoints = [{ lng: event.lngLat.lng, lat: event.lngLat.lat }];
+    setSketch(sketchCollection(state.shapePoints, false));
+  }
   event.preventDefault();
 });
 
 window.addEventListener("mousemove", function (event) {
   if (!state.drawing || !state.dragStart) return;
-  const box = rectangle(state.dragStart, eventLngLat(event));
-  setDraft(box.feature);
+  const ll = eventLngLat(event);
+  if (state.tool === "box") {
+    const box = rectangle(state.dragStart, ll);
+    setDraft(box.feature);
+    return;
+  }
+  if (state.tool === "shape") {
+    const last = state.shapePoints[state.shapePoints.length - 1];
+    if (!last || distanceMeters(last, { lng: ll.lng, lat: ll.lat }) >= 8) {
+      state.shapePoints.push({ lng: ll.lng, lat: ll.lat });
+      setSketch(sketchCollection(state.shapePoints, true));
+    }
+  }
 });
 
 window.addEventListener("mouseup", function (event) {
   if (!state.drawing || !state.dragStart) return;
   state.drawing = false;
-  const box = rectangle(state.dragStart, eventLngLat(event));
+  const start = state.dragStart;
   state.dragStart = null;
-  const width = box.bbox[2] - box.bbox[0];
-  const height = box.bbox[3] - box.bbox[1];
-  if (width < 0.002 && height < 0.002) {
-    if (state.showingSubmission) setDraft(null);
+
+  if (state.tool === "box") {
+    const box = rectangle(start, eventLngLat(event));
+    const width = box.bbox[2] - box.bbox[0];
+    const height = box.bbox[3] - box.bbox[1];
+    if (width < 0.002 && height < 0.002) {
+      if (state.showingSubmission) setDraft(null);
+      return;
+    }
+    state.suppressClick = true;
+    clearIntakeList();
+    setSketch(emptyCollection());
+    showUnknown(box.feature, box.bbox, { inputMethod: "draw_box" });
     return;
   }
-  state.suppressClick = true;
-  state.intakeItems = [];
-  state.intakeSelectedId = null;
-  state.intakeFilename = null;
-  if (intakeFeatureBox) intakeFeatureBox.hidden = true;
-  if (intakeFileName) intakeFileName.textContent = "";
-  showUnknown(box.feature, box.bbox, { inputMethod: "draw" });
+
+  if (state.tool === "shape") {
+    const ll = eventLngLat(event);
+    state.shapePoints.push({ lng: ll.lng, lat: ll.lat });
+    const built = polygonFromPoints(state.shapePoints);
+    state.shapePoints = [];
+    setSketch(emptyCollection());
+    if (!built) {
+      analyzeNote.textContent = "Draw a larger shape — drag around the property boundary.";
+      return;
+    }
+    const error = window.ClearcutIntake.validateBBox(built.bbox);
+    if (error) {
+      analyzeNote.textContent = error;
+      return;
+    }
+    state.suppressClick = true;
+    clearIntakeList();
+    showUnknown(built.feature, built.bbox, { inputMethod: "draw_shape" });
+  }
 });
 
 map.on("click", function (event) {
@@ -826,10 +974,20 @@ map.on("mousemove", function (event) {
   }
   map.getCanvas().style.cursor = state.drawMode ? "crosshair" : "";
 });
+
+window.addEventListener("keydown", function (event) {
+  if (event.key === "Escape" && state.tool === "shape") {
+    state.drawing = false;
+    state.dragStart = null;
+    state.shapePoints = [];
+    setSketch(emptyCollection());
+  }
+});
 }
 
-document.getElementById("tool-pan").addEventListener("click", function () { setDrawMode(false); });
-document.getElementById("tool-box").addEventListener("click", function () { setDrawMode(true); });
+document.getElementById("tool-pan").addEventListener("click", function () { setTool("pan"); });
+document.getElementById("tool-box").addEventListener("click", function () { setTool("box"); });
+document.getElementById("tool-shape").addEventListener("click", function () { setTool("shape"); });
 
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;

@@ -39,14 +39,14 @@
     </section>
 
     <section id="view-unknown">
-      <p class="unknown-copy">Draw a rectangle, or submit a property boundary.</p>
+      <p class="unknown-copy" id="unknown-copy">Draw a box, sketch a shape, or upload a boundary.</p>
       <button id="analyze" type="button">Analyze this area</button>
       <p id="analyze-note" class="hint"></p>
     </section>
 
     <section id="intake" class="intake">
       <h2>Property intake</h2>
-      <p class="hint">Upload or paste a plot boundary. GeoJSON, KML, or GPX (closed walk).</p>
+      <p class="hint">Three ways in: draw a box, drag any shape, or upload GeoJSON / KML / GPX.</p>
       <label class="file-button">
         Choose file
         <input id="intake-file" type="file" accept=".geojson,.json,.kml,.gpx,application/geo+json,application/json,application/vnd.google-earth.kml+xml">
@@ -83,7 +83,7 @@
       <button type="submit">Go</button>
     </form>
     <p id="fly-note" class="hint"></p>
-    <p class="hint">Draw a rectangle, then choose Analyze this area.</p>
+    <p class="hint">Draw box or shape on the map, then Analyze — or upload a boundary above.</p>
 
     <h2>Legend</h2>
     <ul class="legend">
@@ -97,6 +97,7 @@
   <div id="tools">
     <button id="tool-pan" type="button">Pan</button>
     <button id="tool-box" type="button" class="active">Draw box</button>
+    <button id="tool-shape" type="button">Draw shape</button>
   </div>
 
   <div id="timebar">

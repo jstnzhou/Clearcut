@@ -41,11 +41,11 @@ On this submission, Clearcut's result is that the plot does not support approval
 
 ## Property intake
 
-On the map (`web/`), submit a plot by drawing a box **or** uploading / pasting a boundary:
+On the map (`web/`), submit a plot three ways:
 
-- **GeoJSON** (`.geojson` / `.json`)
-- **KML** (`.kml`)
-- **GPX** closed boundary walk (`.gpx`)
+1. **Draw box** — drag a rectangle  
+2. **Draw shape** — freehand-drag any polygon  
+3. **Upload / paste** — **GeoJSON**, **KML**, or **GPX** (closed walk)
 
 Sample files live in `data/samples/`. Analyze still runs on the property bounding box and writes `submission.json` + `submission.geojson` into the plot folder.
 
