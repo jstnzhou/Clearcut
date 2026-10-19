@@ -1,27 +1,27 @@
-# Clearcut
+# OpenCanopy
 
-Clearcut is an independent check a government can run when a plantation asks to be approved.
+OpenCanopy is an independent check a government can run when a plantation asks to be approved.
 
-A plantation that wants approval must submit the geographic location of every plot. Clearcut takes one submitted location and builds the record for that ground back to the EU deforestation cutoff of 31 December 2020. The government decides whether to approve it. Clearcut returns the satellite record and whether that record supports approval.
+A plantation that wants approval must submit the geographic location of every plot. OpenCanopy takes one submitted location and builds the record for that ground back to the EU deforestation cutoff of 31 December 2020. The government decides whether to approve it. OpenCanopy returns the satellite record and whether that record supports approval.
 
 The check is public. Approval rests on the images and the loss map, rather than on the plantation's own description of the land. People who live with that forest can read the same pack.
 
 ## What a check shows
 
-For the polygon the plantation submitted, Clearcut gathers four things:
+For the polygon the plantation submitted, OpenCanopy gathers four things:
 
 1. A satellite image from before the cutoff and a current image of the same ground, from Sentinel-2.
 2. The year any forest on that ground was lost, from Hansen Global Forest Change (loss years through 2024).
 3. A description of what the land became. A vision model reads the current image and marks the converted regions.
 4. A cross-check of each marked region against the loss map. A region is confirmed when the map shows substantial clearing inside it after 2020. Any other region stays inconclusive and needs a person to review it.
 
-When the record supports it, the sentence Clearcut stands behind is:
+When the record supports it, the sentence OpenCanopy stands behind is:
 
 > This plot shows post-2020 tree-cover loss consistent with plantation conversion.
 
 That result means the submission does not support approval. A plot with no post-2020 loss, and no conversion in the imagery, is reported as consistent with a claim that the land was not cleared after the cutoff.
 
-EU deforestation duties apply from 30 December 2026 for large and medium operators. Micro and small operators who already had that status by 31 December 2024 generally wait until 30 June 2027. Clearcut uses 31 December 2020 as the cutoff for the land itself: forest converted to agriculture after that date is the change the check is looking for.
+EU deforestation duties apply from 30 December 2026 for large and medium operators. Micro and small operators who already had that status by 31 December 2024 generally wait until 30 June 2027. OpenCanopy uses 31 December 2020 as the cutoff for the land itself: forest converted to agriculture after that date is the change the check is looking for.
 
 ## The case on file
 
@@ -37,7 +37,7 @@ One submitted location is included, in West Kalimantan, Indonesia (latitude −0
 
 The loss map ends in 2024, so the 2026 image is evidence of what the land looks like now. It is not a 2026 detection in the Hansen layer.
 
-On this submission, Clearcut's result is that the plot does not support approval.
+On this submission, OpenCanopy's result is that the plot does not support approval.
 
 ## Property intake
 
