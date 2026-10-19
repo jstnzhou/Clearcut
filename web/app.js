@@ -61,9 +61,19 @@ const state = {
   intakeFilename: null,
   intakeItems: [],
   intakeSelectedId: null,
+  draftName: null,
+  draftProperties: null,
+  companies: [],
+  openCompanies: {},
+  farmFilters: {},
+  selectedFarmId: null,
   confidence: null,
+  clipToDraft: false,
+  investigation: null,
+  investigationPending: null,
   suppressClick: false,
-  mapReady: false
+  mapReady: false,
+  plotRequest: 0
 };
 
 function formatDate(iso) {
@@ -279,6 +289,200 @@ function countResult(result) {
   return state.chips.filter(function (chip) { return chip.result === result; }).length;
 }
 
+const CAUSE_LABEL = {
+  oil_palm_plantation: "Oil palm plantation",
+  pulpwood_plantation: "Pulpwood plantation",
+  rubber_plantation: "Rubber plantation",
+  other_plantation: "Other plantation",
+  smallholder_agriculture: "Smallholder agriculture",
+  mining: "Mining",
+  infrastructure: "Infrastructure",
+  fire: "Fire",
+  logging: "Logging",
+  other: "Other",
+  unknown: "Unknown"
+};
+
+function sourceById(id) {
+  const sources = (state.investigation && state.investigation.sources) || [];
+  for (let i = 0; i < sources.length; i += 1) {
+    if (sources[i].id === id) return sources[i];
+  }
+  return null;
+}
+
+function knownValue(value) {
+  const text = String(value || "").trim();
+  if (!text || text.toLowerCase() === "unknown") return "";
+  return text;
+}
+
+function asSentence(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return /[.!?]$/.test(text) ? text : text + ".";
+}
+
+function appendSourceLinks(parent, ids) {
+  let added = 0;
+  (ids || []).forEach(function (id) {
+    const source = sourceById(id);
+    if (!source) return;
+    const url = String(source.url || "");
+    if (url.indexOf("https://") !== 0 && url.indexOf("http://") !== 0) return;
+    if (added) parent.append(document.createTextNode(", "));
+    const link = document.createElement("a");
+    link.href = url;
+    link.rel = "noopener noreferrer";
+    link.target = "_blank";
+    link.textContent = source.title || id;
+    parent.append(link);
+    added += 1;
+  });
+  return added;
+}
+
+function causeSummary(report) {
+  const causeName = knownValue(CAUSE_LABEL[report.cause] || report.cause);
+  const replacement = knownValue(report.replacement_land_use);
+  const names = [knownValue(report.plantation_name), knownValue(report.company)].filter(Boolean);
+  const parts = [];
+  if (causeName) parts.push(causeName);
+  if (replacement && replacement.toLowerCase() !== causeName.toLowerCase()) parts.push(replacement);
+  if (names.length) parts.push(names.join(", "));
+  let text = parts.length ? parts.join(". ") : "No cause was identified in public reporting";
+  text = asSentence(text);
+  if (report.confidence) text += " Confidence: " + report.confidence + ".";
+  const period = knownValue(report.event_period);
+  if (period) text += " Reported period: " + asSentence(period);
+  return text;
+}
+
+function appendInvestigation() {
+  const investigation = state.investigation;
+  if (!investigation || !(Number(investigation.tool_calls) > 0) || investigation.status === "not_applicable") return;
+  const block = document.createElement("details");
+  block.className = "cause-block";
+  const heading = document.createElement("summary");
+  heading.textContent = "Likely cause (public reporting)";
+  block.append(heading);
+  if (investigation.status === "error" || !investigation.report) {
+    const line = document.createElement("p");
+    line.className = "disclaimer";
+    line.textContent = "Source lookup unavailable.";
+    block.append(line);
+    findingEl.append(block);
+    return;
+  }
+  const report = investigation.report;
+  const summary = document.createElement("p");
+  summary.textContent = causeSummary(report);
+  block.append(summary);
+  const evidence = Array.isArray(report.evidence) ? report.evidence : [];
+  if (evidence.length) {
+    const list = document.createElement("ul");
+    list.className = "cause-list";
+    evidence.forEach(function (item) {
+      const entry = document.createElement("li");
+      entry.textContent = asSentence(item && item.claim);
+      const cite = document.createElement("span");
+      cite.className = "cause-cite";
+      cite.append(document.createTextNode("Source: "));
+      if (appendSourceLinks(cite, item && item.source_ids)) entry.append(cite);
+      list.append(entry);
+    });
+    block.append(list);
+  }
+  const inferences = (Array.isArray(report.inferences) ? report.inferences : []).map(function (item) {
+    return asSentence(item && (item.claim || item.basis));
+  }).filter(Boolean);
+  const caveats = (Array.isArray(report.caveats) ? report.caveats : []).map(asSentence).filter(Boolean);
+  if (inferences.length || caveats.length) {
+    const inferHeading = document.createElement("h2");
+    inferHeading.textContent = "Inferences";
+    const list = document.createElement("ul");
+    list.className = "cause-list";
+    inferences.concat(caveats).forEach(function (text) {
+      const entry = document.createElement("li");
+      entry.textContent = text;
+      list.append(entry);
+    });
+    block.append(inferHeading, list);
+  }
+  const note = document.createElement("p");
+  note.className = "disclaimer";
+  note.textContent = "From public web reporting, not a compliance finding.";
+  block.append(note);
+  findingEl.append(block);
+}
+
+function scoredMean(confidence) {
+  const windows = (confidence && confidence.windows) || [];
+  const scored = [];
+  for (let i = 0; i < windows.length; i += 1) {
+    const window = windows[i];
+    if (!window || typeof window.score !== "number") continue;
+    if (!(Number(window.seconds) > 0 || String(window.raw || "").trim())) continue;
+    scored.push(window);
+  }
+  if (!scored.length) return null;
+  let weight = 0;
+  let sum = 0;
+  scored.forEach(function (window) {
+    const share = typeof window.loss_share === "number" ? window.loss_share : 0;
+    weight += share;
+    sum += share * window.score;
+  });
+  const mean = weight > 0
+    ? sum / weight
+    : scored.reduce(function (total, window) { return total + window.score; }, 0) / scored.length;
+  return Math.round(mean * 1000) / 1000;
+}
+
+function scoreNeedsSearch(confidence) {
+  if (!confidence || confidence.maps_only || !confidence.model) return false;
+  const mean = scoredMean(confidence);
+  if (typeof mean === "number" && mean >= 0.5) return true;
+  const windows = confidence.windows || [];
+  for (let i = 0; i < windows.length; i += 1) {
+    const window = windows[i];
+    if (window && window.eligible && typeof window.score === "number" && window.score >= 0.6) return true;
+  }
+  return false;
+}
+
+function requestInvestigation(plotUrl) {
+  const id = String(plotUrl || "").split("/").filter(Boolean).pop();
+  if (!id || state.investigationPending === id) return;
+  state.investigationPending = id;
+  if (statusEl) {
+    statusEl.hidden = false;
+    statusEl.textContent = "Looking up public reporting for this plot.";
+  }
+  fetch("/api/investigate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plot: id })
+  }).then(function (response) {
+    return response.json().then(function (payload) {
+      if (!response.ok) throw new Error(payload.error || "Source lookup failed");
+      return payload;
+    });
+  }).then(function (payload) {
+    if (state.plotUrl !== plotUrl) return;
+    state.investigation = payload;
+    state.investigationPending = null;
+    renderPanel();
+  }).catch(function () {
+    if (state.plotUrl !== plotUrl) return;
+    state.investigationPending = null;
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = "Source lookup unavailable.";
+    }
+  });
+}
+
 function renderFinding() {
   findingEl.replaceChildren();
   if (state.confidence && typeof state.confidence.mean_score === "number") {
@@ -295,7 +499,7 @@ function renderFinding() {
       : state.confidence.perceptron_only
       ? "Perceptron only. The 2020 forest map and the loss map are off, so you can compare the color with the photo."
       : state.confidence.gated
-      ? "Not a compliance finding. Color appears where 2020 forest, post-2020 tree loss, and Perceptron agree."
+      ? ""
       : "Not a compliance finding. Color is Perceptron's conversion confidence, from green to red.";
     const loss = document.createElement("p");
     loss.className = "loss-note";
@@ -324,7 +528,9 @@ function renderFinding() {
         ? "Mean confidence " + mean.toFixed(2) + " where trees were lost after 2020."
         : "Mean confidence " + mean.toFixed(2) + " across the tiles.";
     }
-    findingEl.append(verdict, disclaimer, loss);
+    if (disclaimer.textContent) findingEl.append(verdict, disclaimer, loss);
+    else findingEl.append(verdict, loss);
+    appendInvestigation();
     return;
   }
   if (!state.analysisLoaded) return;
@@ -339,6 +545,7 @@ function renderFinding() {
     loss.className = "loss-note";
     loss.textContent = "About 20% of this box was lost in 2023. The loss map ends in 2024.";
     findingEl.append(verdict, disclaimer, loss);
+    appendInvestigation();
     return;
   }
   const verdict = document.createElement("p");
@@ -356,16 +563,20 @@ function renderFinding() {
     list.append(item);
   });
   findingEl.append(verdict, list);
+  appendInvestigation();
 }
 
 function renderSelection() {
   const chip = state.chips.find(function (item) { return item.id === state.selectedId; });
+  const chipBlock = document.getElementById("chip-block");
   if (!chip || !state.showingSubmission) {
-    chipEmpty.hidden = false;
+    if (chipEmpty) chipEmpty.hidden = false;
     chipReadout.hidden = true;
+    if (chipBlock) chipBlock.hidden = true;
     return;
   }
-  chipEmpty.hidden = true;
+  if (chipEmpty) chipEmpty.hidden = true;
+  if (chipBlock) chipBlock.hidden = false;
   chipReadout.hidden = false;
   document.getElementById("chip-id").textContent = chip.id + " · " + chip.quad;
   document.getElementById("chip-label").textContent = chip.perceptron || "pending";
@@ -374,13 +585,57 @@ function renderSelection() {
   document.getElementById("chip-result").textContent = RESULT_NAME[chip.result] || chip.result;
 }
 
+function formatPlace(evidence, submission) {
+  const name = submission && submission.name;
+  const lat = evidence && typeof evidence.lat === "number" ? evidence.lat : null;
+  const lon = evidence && typeof evidence.lon === "number" ? evidence.lon : null;
+  const plotName = document.getElementById("plot-name");
+  const plotCoords = document.getElementById("plot-coords");
+  if (plotName) {
+    if (state.plotUrl && state.plotUrl.endsWith("kalbar1")) plotName.textContent = "Plot KS-19, a fictional submission.";
+    else if (name) plotName.textContent = name;
+    else plotName.textContent = "This plot";
+  }
+  if (plotCoords) {
+    plotCoords.textContent = lat !== null && lon !== null
+      ? "Latitude " + lat.toFixed(2) + ", longitude " + lon.toFixed(2) + "."
+      : "";
+  }
+}
+
+function refreshPrompt() {
+  const lead = document.getElementById("panel-lead");
+  const copy = document.getElementById("unknown-copy");
+  const button = document.getElementById("analyze");
+  if (button && button.disabled) return;
+  if (state.showingSubmission) {
+    if (lead) lead.textContent = "Red is likely planted. Green is not. This is not a compliance finding.";
+    return;
+  }
+  if (lead) lead.textContent = "Compare a boundary with the forest that was there in 2020.";
+  if (!copy) return;
+  const ready = !!state.draftBbox;
+  if (state.tool === "shape") {
+    copy.textContent = ready ? "Shape is set. Check it when you are ready." : "Drag a shape around the plot.";
+  } else if (state.tool === "upload") {
+    copy.textContent = ready ? "Boundary is set. Check it when you are ready." : "Upload a file or paste GeoJSON below.";
+  } else if (state.tool === "pan") {
+    copy.textContent = "Move the map, or switch to Box or Shape to draw.";
+  } else {
+    copy.textContent = ready ? "Box is set. Check it when you are ready." : "Drag a box around the plot.";
+  }
+}
+
 function renderPanel() {
   viewSubmission.hidden = !state.showingSubmission;
   viewUnknown.hidden = state.showingSubmission;
+  refreshPrompt();
   if (!state.showingSubmission) return;
   const chipsReady = state.analysisLoaded || !!state.confidence;
   statusEl.hidden = chipsReady;
-  statusEl.textContent = chipsReady ? "" : "Chip analysis is still running.";
+  statusEl.textContent = chipsReady ? "" : "Still scoring the tiles.";
+  const chipBlock = document.getElementById("chip-block");
+  if (chipBlock) chipBlock.hidden = !state.chips.length;
   renderFinding();
   renderSelection();
 }
@@ -400,7 +655,8 @@ function clipImageToShape(url, bbox, geometry) {
   if (!geometry || (geometry.type !== "Polygon" && geometry.type !== "MultiPolygon")) {
     return Promise.resolve(url);
   }
-  if (clippedImages[url]) return Promise.resolve(clippedImages[url]);
+  const clipKey = url + "|" + (geometry ? JSON.stringify(geometry.coordinates) : "");
+  if (clippedImages[clipKey]) return Promise.resolve(clippedImages[clipKey]);
   return new Promise(function (resolve) {
     const img = new Image();
     img.onload = function () {
@@ -433,7 +689,7 @@ function clipImageToShape(url, bbox, geometry) {
         });
         ctx.fill("evenodd");
         const shown = canvas.toDataURL("image/png");
-        clippedImages[url] = shown;
+        clippedImages[clipKey] = shown;
         resolve(shown);
       } catch (error) {
         resolve(url);
@@ -694,8 +950,9 @@ function showSubmission(animate) {
     padding.top = 16;
     padding.bottom = 16;
   }
+  const frame = state.clipToDraft && state.draftBbox ? state.draftBbox : state.bbox;
   map.fitBounds(
-    [[state.bbox[0], state.bbox[1]], [state.bbox[2], state.bbox[3]]],
+    [[frame[0], frame[1]], [frame[2], frame[3]]],
     { padding: padding, maxZoom: 13, duration: animate ? 900 : 0 }
   );
 }
@@ -707,6 +964,9 @@ function showUnknown(feature, bbox, options) {
   state.draftBbox = bbox;
   state.draftFeature = feature || null;
   state.draftGeometry = feature && feature.geometry ? feature.geometry : null;
+  state.draftName = opts.name || null;
+  state.draftProperties = opts.properties || null;
+  if (!opts.keepFarm) state.selectedFarmId = null;
   state.intakeMethod = opts.inputMethod || "draw";
   if (opts.filename) state.intakeFilename = opts.filename;
   setDraft(feature);
@@ -772,7 +1032,7 @@ function selectIntakeItem(id) {
     return;
   }
   state.intakeSelectedId = id;
-  intakeNote.textContent = "Selected “" + item.label + "”. Analyze when ready.";
+  intakeNote.textContent = "“" + item.label + "” is selected. Check it when you are ready.";
   renderIntakeFeatures(state.intakeItems);
   showUnknown(item.feature, item.bbox.slice(), {
     inputMethod: state.intakeMethod,
@@ -786,16 +1046,6 @@ async function ingestParsed(parsed) {
   if (intakeFileName) intakeFileName.textContent = parsed.filename || "";
   state.intakeSelectedId = null;
   renderIntakeFeatures(parsed.items);
-}
-
-async function loadSampleProperty() {
-  intakeNote.textContent = "Loading sample GeoJSON…";
-  const response = await fetch("/data/samples/kalbar_property.geojson");
-  if (!response.ok) throw new Error("Sample property file missing.");
-  const text = await response.text();
-  const items = window.ClearcutIntake.normalizeGeoJSON(text);
-  await ingestParsed({ method: "sample_geojson", items: items, filename: "kalbar_property.geojson" });
-  intakeNote.textContent = "Sample West Kalimantan plot loaded.";
 }
 
 function selectChip(id) {
@@ -902,13 +1152,7 @@ function setTool(tool) {
   const intake = document.getElementById("intake");
   if (intake) intake.classList.toggle("intake-focus", tool === "upload");
 
-  const copy = document.getElementById("unknown-copy");
-  if (copy && !state.showingSubmission) {
-    if (tool === "shape") copy.textContent = "Drag any shape around the property, then analyze.";
-    else if (tool === "box") copy.textContent = "Drag a box around the property, then analyze.";
-    else if (tool === "upload") copy.textContent = "Upload or paste GeoJSON, KML, or GPX below.";
-    else copy.textContent = "Pan the map, or choose Box / Shape / Upload.";
-  }
+  refreshPrompt();
 
   if (tool === "upload" && intake) {
     intake.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1160,12 +1404,34 @@ window.addEventListener("keydown", function (event) {
 bindModeFloatHover();
 
 
+function hidePlotLayers() {
+  if (!state.mapReady || !map) return;
+  ["scene", "confidence"].forEach(function (id) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
+  });
+}
+
 function openPlot(id) {
   if (!/^[A-Za-z0-9_]+$/.test(id)) return Promise.resolve();
-  analyzeNote.textContent = "";
+  analyzeNote.textContent = "Opening this checked plot.";
+  state.plotRequest += 1;
   state.plotUrl = "../data/plots/" + id;
+  state.clipToDraft = false;
+  state.draftBbox = null;
+  state.draftFeature = null;
+  state.draftGeometry = null;
+  state.confidence = null;
+  state.investigation = null;
+  state.investigationPending = null;
+  state.scenes = [];
+  state.chips = [];
+  hidePlotLayers();
+  setDraft(null);
   return loadPlot().then(function () {
     showSubmission(true);
+    analyzeNote.textContent = "Showing the saved check for this plot.";
+  }).catch(function (error) {
+    analyzeNote.textContent = error && error.message ? error.message : "This checked plot could not be opened.";
   });
 }
 
@@ -1277,26 +1543,36 @@ function setProcessing(on, label) {
 }
 
 function startProcessingCycle() {
-  const steps = ["Processing", "Fetching years", "Scoring tiles", "Please wait"];
+  const steps = ["Reading the boundary", "Fetching the years", "Scoring the tiles"];
   let index = 0;
   setProcessing(true, steps[0]);
   processingTimer = setInterval(function () {
-    index = (index + 1) % steps.length;
+    index += 1;
+    if (index >= steps.length) {
+      clearInterval(processingTimer);
+      processingTimer = null;
+      return;
+    }
     if (processingLabel) processingLabel.textContent = steps[index];
-  }, 1400);
+  }, 1600);
 }
 
 document.getElementById("analyze").addEventListener("click", function () {
   const button = this;
-  if (!state.draftBbox) return;
+  if (!state.draftBbox) {
+    analyzeNote.textContent = "Draw or upload a boundary first.";
+    return;
+  }
   const boundsError = window.ClearcutIntake && window.ClearcutIntake.validateBBox(state.draftBbox);
   if (boundsError) {
     analyzeNote.textContent = boundsError;
     return;
   }
   button.disabled = true;
-  button.textContent = "Loading…";
-  analyzeNote.textContent = "Fetching the years and scoring the tiles.";
+  button.textContent = "Checking…";
+  analyzeNote.textContent = "Pulling the satellite years, then scoring the tiles.";
+  const lead = document.getElementById("panel-lead");
+  if (lead) lead.textContent = "The check is running.";
   startProcessingCycle();
   const selected = state.intakeItems.find(function (row) { return row.id === state.intakeSelectedId; });
   const payload = {
@@ -1304,8 +1580,8 @@ document.getElementById("analyze").addEventListener("click", function () {
     geometry: state.draftGeometry,
     input_method: state.intakeMethod || "draw",
     source_filename: state.intakeFilename,
-    name: selected ? selected.label : undefined,
-    properties: selected ? selected.properties : {}
+    name: state.draftName || (selected ? selected.label : undefined),
+    properties: Object.assign({}, selected ? selected.properties : {}, state.draftProperties || {})
   };
   fetch("/api/analyze", {
     method: "POST",
@@ -1319,32 +1595,47 @@ document.getElementById("analyze").addEventListener("click", function () {
   }).then(function (payload) {
     if (payload.cached) setProcessing(true, "Loading cache");
     else setProcessing(true, "Finishing");
+    state.clipToDraft = !!payload.cached && !!state.draftGeometry;
     state.plotUrl = "../data/plots/" + payload.plot;
     return loadPlot().then(function () {
       return payload;
     });
   }).then(function (payload) {
+    const saved = state.bbox;
+    const drawn = state.draftBbox;
+    const cropped = payload.cached && state.clipToDraft && saved && drawn
+      && (saved[0] < drawn[0] - 1e-5 || saved[1] < drawn[1] - 1e-5 || saved[2] > drawn[2] + 1e-5 || saved[3] > drawn[3] + 1e-5);
     analyzeNote.textContent = payload.cached
-      ? "Loaded a cached check for this area."
-      : "";
+      ? (cropped
+        ? "This area was already checked. Showing the part inside the shape you drew."
+        : "This area was already checked. Showing that result.")
+      : "Check finished.";
     showSubmission(true);
   }).catch(function (error) {
-    analyzeNote.textContent = error.message || "Analysis failed";
+    analyzeNote.textContent = error.message || "The check did not finish. Try again.";
+    const lead = document.getElementById("panel-lead");
+    if (lead && !state.showingSubmission) lead.textContent = "Compare a boundary with the forest that was there in 2020.";
   }).finally(function () {
     setProcessing(false);
     button.disabled = false;
-    button.textContent = "Analyze this area";
+    button.textContent = "Check this plot";
   });
 });
 
 document.getElementById("intake-file").addEventListener("change", function (event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
+  const lower = file.name.toLowerCase();
+  if (lower.endsWith(".pdf") || file.type === "application/pdf") {
+    event.target.value = "";
+    importCompanyPdf(file);
+    return;
+  }
   intakeNote.textContent = "Reading " + file.name + "…";
   window.ClearcutIntake.parseUpload(file).then(function (parsed) {
     return ingestParsed(parsed);
   }).then(function () {
-    intakeNote.textContent = "Loaded " + file.name + ". Select a feature if needed, then analyze.";
+    intakeNote.textContent = file.name + " is loaded. Check it when you are ready.";
   }).catch(function (error) {
     intakeNote.textContent = error.message || "Could not read that file.";
   });
@@ -1356,15 +1647,9 @@ document.getElementById("intake-paste-btn").addEventListener("click", function (
   window.ClearcutIntake.parsePaste(text).then(function (parsed) {
     return ingestParsed(parsed);
   }).then(function () {
-    intakeNote.textContent = "Pasted GeoJSON ready. Analyze when ready.";
+    intakeNote.textContent = "That polygon is ready. Check it when you are ready.";
   }).catch(function (error) {
     intakeNote.textContent = error.message || "Could not parse that GeoJSON.";
-  });
-});
-
-document.getElementById("intake-sample").addEventListener("click", function () {
-  loadSampleProperty().catch(function (error) {
-    intakeNote.textContent = error.message || "Could not load sample.";
   });
 });
 
@@ -1430,34 +1715,44 @@ async function fetchJson(url) {
 
 function loadPlot() {
   const plot = state.plotUrl;
+  const request = state.plotRequest;
   return Promise.all([
     fetchJson(plot + "/evidence.json"),
     fetchJson(plot + "/chip_stats.json"),
     fetchJson(plot + "/perception_tiles.json"),
     fetchJson(plot + "/confidence.json"),
+    fetchJson(plot + "/investigation.json"),
     fetchJson(plot + "/submission.json")
   ]).then(function (results) {
     const evidence = results[0];
     const stats = results[1];
     const perception = results[2];
     const confidence = results[3];
-    const submission = results[4];
-    if (evidence.ok && evidence.data) {
-      if (Array.isArray(evidence.data.bbox) && evidence.data.bbox.length === 4) {
-        state.bbox = evidence.data.bbox.slice();
-      }
-      state.scenes = scenesFrom(evidence.data).filter(function (scene) {
-        const year = Number(String(scene.date).slice(0, 4));
-        return !(plot.endsWith("kalbar1") && (year === 2022 || year === 2024));
-      });
-      if (evidence.data.geometry) setPropertyBoundary(evidence.data.geometry);
+    const investigation = results[4];
+    const submission = results[5];
+    if (request !== state.plotRequest) return;
+    if (!evidence.ok || !evidence.data || !Array.isArray(evidence.data.bbox) || evidence.data.bbox.length !== 4) {
+      throw new Error("This checked plot has no map bounds.");
     }
-    if ((!state.draftGeometry) && submission.ok && submission.data && submission.data.geometry) {
-      setPropertyBoundary(submission.data.geometry);
+    state.bbox = evidence.data.bbox.slice();
+    state.scenes = scenesFrom(evidence.data).filter(function (scene) {
+      const year = Number(String(scene.date).slice(0, 4));
+      return !(plot.endsWith("kalbar1") && (year === 2022 || year === 2024));
+    });
+    if (!(state.clipToDraft && state.draftGeometry)) {
+      const geometry = evidence.data.geometry
+        || (submission.ok && submission.data && submission.data.geometry)
+        || null;
+      setPropertyBoundary(geometry);
+    } else {
+      setPropertyBoundary(state.draftGeometry);
     }
     state.confidence = confidence && confidence.ok ? confidence.data : null;
+    state.investigation = investigation && investigation.ok ? investigation.data : null;
+    formatPlace(evidence.ok ? evidence.data : null, submission.ok ? submission.data : null);
     state.analysisLoaded = stats.ok && perception.ok;
     state.chips = buildChips(stats.ok ? stats.data : null, perception.ok ? perception.data : null);
+    if (request !== state.plotRequest) return;
     if (state.mapReady && state.showingSubmission) {
       if (state.draftFeature) setDraft(state.draftFeature);
       applyChips();
@@ -1469,5 +1764,221 @@ function loadPlot() {
       timeInput.value = String(state.scenes.length - 1);
     }
     renderPanel();
+    if (scoreNeedsSearch(state.confidence) && !state.investigation) requestInvestigation(plot);
   });
 }
+
+const companyList = document.getElementById("company-list");
+const companiesEmpty = document.getElementById("companies-empty");
+
+function farmLabel(farm) {
+  const parts = [farm.name || "Mill"];
+  if (farm.country) parts.push(farm.country);
+  if (farm.uml_id) parts.push(farm.uml_id);
+  if (!farm.resolved) parts.push("no coordinates");
+  return parts.join(" · ");
+}
+
+function renderFarmList(list, company) {
+  list.replaceChildren();
+  const query = (state.farmFilters[company.id] || "").trim().toLowerCase();
+  const farms = (company.farms || []).filter(function (farm) {
+    if (!query) return true;
+    const hay = [farm.name, farm.country, farm.uml_id, farm.mill_company, farm.supplier].join(" ").toLowerCase();
+    return hay.indexOf(query) !== -1;
+  });
+  if (!farms.length) {
+    const empty = document.createElement("li");
+    empty.className = "farm-more";
+    empty.textContent = query ? "No mills match." : "No mills in this folder.";
+    list.append(empty);
+    return;
+  }
+  farms.forEach(function (farm) {
+    const li = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.farmId = company.id + ":" + farm.id;
+    button.textContent = farmLabel(farm);
+    if (!farm.resolved) button.classList.add("unresolved");
+    if (state.selectedFarmId === button.dataset.farmId) button.classList.add("active");
+    button.addEventListener("click", function () { selectCompanyFarm(company, farm); });
+    li.append(button);
+    list.append(li);
+  });
+}
+
+function renderCompanies() {
+  if (!companyList) return;
+  const focus = document.activeElement;
+  const restoreFilter = focus && focus.classList && focus.classList.contains("farm-filter") ? focus.dataset.companyId : null;
+  const restoreName = focus && focus.classList && focus.classList.contains("company-name") ? focus.dataset.companyId : null;
+  companyList.replaceChildren();
+  if (companiesEmpty) companiesEmpty.hidden = state.companies.length > 0;
+  state.companies.forEach(function (company) {
+    const item = document.createElement("li");
+    item.className = "company";
+    const row = document.createElement("div");
+    row.className = "company-row";
+    const open = !!state.openCompanies[company.id];
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "company-toggle";
+    toggle.textContent = open ? "▾" : "▸";
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.setAttribute("aria-label", (open ? "Collapse " : "Expand ") + (company.name || "company"));
+    toggle.addEventListener("click", function () {
+      state.openCompanies[company.id] = !state.openCompanies[company.id];
+      renderCompanies();
+    });
+    const name = document.createElement("input");
+    name.type = "text";
+    name.className = "company-name";
+    name.value = company.name || "";
+    name.dataset.companyId = company.id;
+    name.setAttribute("aria-label", "Company name");
+    name.addEventListener("change", function () { renameCompany(company, name.value); });
+    name.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        name.blur();
+      }
+    });
+    const count = document.createElement("span");
+    count.className = "company-count";
+    count.textContent = String((company.farms || []).length);
+    row.append(toggle, name, count);
+    item.append(row);
+    if (open) {
+      const filter = document.createElement("input");
+      filter.type = "search";
+      filter.className = "farm-filter";
+      filter.placeholder = "Filter mills";
+      filter.value = state.farmFilters[company.id] || "";
+      filter.dataset.companyId = company.id;
+      filter.setAttribute("aria-label", "Filter mills in " + (company.name || "company"));
+      const farms = document.createElement("ul");
+      farms.className = "farm-list";
+      filter.addEventListener("input", function () {
+        state.farmFilters[company.id] = filter.value;
+        renderFarmList(farms, company);
+      });
+      renderFarmList(farms, company);
+      item.append(filter, farms);
+    }
+    companyList.append(item);
+  });
+  if (restoreFilter) {
+    const next = companyList.querySelector('.farm-filter[data-company-id="' + restoreFilter + '"]');
+    if (next) {
+      next.focus();
+      const length = next.value.length;
+      if (next.setSelectionRange) next.setSelectionRange(length, length);
+    }
+  } else if (restoreName) {
+    const next = companyList.querySelector('.company-name[data-company-id="' + restoreName + '"]');
+    if (next) next.focus();
+  }
+}
+
+function loadCompanies() {
+  return fetchJson("/api/companies").then(function (result) {
+    state.companies = result.ok && result.data && Array.isArray(result.data.companies)
+      ? result.data.companies
+      : [];
+    renderCompanies();
+  });
+}
+
+function renameCompany(company, name) {
+  const next = String(name || "").trim();
+  if (!next || next === company.name) {
+    renderCompanies();
+    return;
+  }
+  fetch("/api/companies/rename", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: company.id, name: next })
+  }).then(function (response) {
+    return response.json().then(function (body) {
+      if (!response.ok) throw new Error(body.error || "Could not rename that company.");
+      return body;
+    });
+  }).then(function (body) {
+    company.name = body.name || next;
+    if (intakeNote) intakeNote.textContent = "Renamed the folder to " + company.name + ".";
+    renderCompanies();
+  }).catch(function (error) {
+    if (intakeNote) intakeNote.textContent = error.message || "Could not rename that company.";
+    renderCompanies();
+  });
+}
+
+function selectCompanyFarm(company, farm) {
+  state.selectedFarmId = company.id + ":" + farm.id;
+  if (companyList) {
+    companyList.querySelectorAll(".farm-list button").forEach(function (button) {
+      button.classList.toggle("active", button.dataset.farmId === state.selectedFarmId);
+    });
+  }
+  if (!farm.resolved || !farm.geometry || !farm.bbox) {
+    if (intakeNote) {
+      intakeNote.textContent = (farm.name || "That mill") + (farm.uml_id ? " (" + farm.uml_id + ")" : "") + " has no coordinates in the mill list.";
+    }
+    return;
+  }
+  const feature = {
+    type: "Feature",
+    properties: {
+      name: farm.name,
+      uml_id: farm.uml_id || "",
+      company: company.name
+    },
+    geometry: farm.geometry
+  };
+  state.intakeMethod = "upload_pdf";
+  state.intakeFilename = company.source_filename || null;
+  state.intakeSelectedId = null;
+  if (intakeFileName) intakeFileName.textContent = company.source_filename || "";
+  renderIntakeFeatures([]);
+  showUnknown(feature, farm.bbox.slice(), {
+    inputMethod: "upload_pdf",
+    filename: company.source_filename,
+    name: farm.name,
+    properties: feature.properties,
+    keepFarm: true
+  });
+  if (intakeNote) intakeNote.textContent = "Loaded " + farm.name + ". Press Check this plot to run it.";
+}
+
+function importCompanyPdf(file) {
+  if (intakeNote) intakeNote.textContent = "Reading mills from " + file.name + "…";
+  file.arrayBuffer().then(function (buffer) {
+    return fetch("/api/companies/import", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/pdf",
+        "X-Filename": encodeURIComponent(file.name)
+      },
+      body: buffer
+    });
+  }).then(function (response) {
+    return response.json().then(function (body) {
+      if (!response.ok) throw new Error(body.error || "Could not read that PDF.");
+      return body;
+    });
+  }).then(function (body) {
+    state.openCompanies[body.id] = true;
+    let note = "Saved " + (body.mill_count || 0) + " mills under " + body.name + ".";
+    if (body.unresolved_count) note += " " + body.unresolved_count + " had no coordinates.";
+    note += " Click a mill to load it. Analysis does not start on its own.";
+    if (intakeNote) intakeNote.textContent = note;
+    if (intakeFileName) intakeFileName.textContent = file.name;
+    return loadCompanies();
+  }).catch(function (error) {
+    if (intakeNote) intakeNote.textContent = error.message || "Could not read that PDF.";
+  });
+}
+
+loadCompanies();
