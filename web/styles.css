@@ -426,10 +426,15 @@ input[type="text"].company-name:focus {
   border: 1px solid var(--line);
 }
 
-.farm-list button:hover,
-.farm-list button.active {
+.farm-list button:hover {
   border-color: rgba(236, 234, 228, 0.45);
   background: #252a30;
+}
+
+.farm-list button.active {
+  border-color: #f6f4ec;
+  background: #243028;
+  color: #f6f4ec;
 }
 
 .farm-list button.unresolved {
@@ -783,6 +788,37 @@ body.demo #tools { top: 60px; }
   padding: 8px 18px 8px;
   background: rgba(14, 16, 18, 0.92);
   border-top: 1px solid var(--line);
+}
+
+.cause-block {
+  margin-top: 16px;
+}
+
+.cause-block summary {
+  cursor: pointer;
+  font-family: Fraunces, serif;
+  font-size: 18px;
+  font-weight: 540;
+}
+
+.cause-block a {
+  color: #eceae4;
+}
+
+.cause-block .cause-list {
+  margin: 8px 0 12px;
+  padding-left: 1.2em;
+}
+
+.cause-block li {
+  margin: 0 0 8px;
+}
+
+.cause-block .cause-cite {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 #play {

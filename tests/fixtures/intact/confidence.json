@@ -1,0 +1,27 @@
+{
+  "model": "perceptron-mk1.5",
+  "reasoning_effort": "high",
+  "prompt": "plantation conversion confidence",
+  "gated": true,
+  "perceptron_only": false,
+  "maps_only": false,
+  "layers": ["forest", "loss"],
+  "both_share": 0.0,
+  "mean_score": 0.0,
+  "windows": [
+    {
+      "id": 0,
+      "row": 0,
+      "col": 0,
+      "score": 0.0,
+      "seconds": 1.0,
+      "box": [0, 0, 10, 10],
+      "polygon": [[110.05, -0.75], [110.08, -0.75], [110.08, -0.78], [110.05, -0.78], [110.05, -0.75]],
+      "raw": "0.0",
+      "loss_share": 0.0,
+      "forest_share": 0.9,
+      "eligible": false,
+      "score_raw": 0.0
+    }
+  ]
+}

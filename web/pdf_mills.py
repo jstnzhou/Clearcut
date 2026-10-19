@@ -11,7 +11,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
-MILL_RADIUS_M = 1000
+MILL_RADIUS_M = 10000
 MILL_SIDES = 32
 
 _HEADER_KEYS = (

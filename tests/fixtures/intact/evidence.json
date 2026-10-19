@@ -1,0 +1,8 @@
+{
+  "lat": -0.78,
+  "lon": 110.08,
+  "bbox": [110.05, -0.81, 110.11, -0.75],
+  "scenes": [],
+  "before": {"date": "2020-09-18", "scene_id": "S2B_INTACT", "cloud_cover": 4.6},
+  "after": {"date": "2025-07-29", "scene_id": "S2A_INTACT", "cloud_cover": 1.0}
+}

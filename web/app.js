@@ -68,6 +68,9 @@ const state = {
   farmFilters: {},
   selectedFarmId: null,
   confidence: null,
+  clipToDraft: false,
+  investigation: null,
+  investigationPending: null,
   suppressClick: false,
   mapReady: false,
   plotRequest: 0
@@ -286,6 +289,200 @@ function countResult(result) {
   return state.chips.filter(function (chip) { return chip.result === result; }).length;
 }
 
+const CAUSE_LABEL = {
+  oil_palm_plantation: "Oil palm plantation",
+  pulpwood_plantation: "Pulpwood plantation",
+  rubber_plantation: "Rubber plantation",
+  other_plantation: "Other plantation",
+  smallholder_agriculture: "Smallholder agriculture",
+  mining: "Mining",
+  infrastructure: "Infrastructure",
+  fire: "Fire",
+  logging: "Logging",
+  other: "Other",
+  unknown: "Unknown"
+};
+
+function sourceById(id) {
+  const sources = (state.investigation && state.investigation.sources) || [];
+  for (let i = 0; i < sources.length; i += 1) {
+    if (sources[i].id === id) return sources[i];
+  }
+  return null;
+}
+
+function knownValue(value) {
+  const text = String(value || "").trim();
+  if (!text || text.toLowerCase() === "unknown") return "";
+  return text;
+}
+
+function asSentence(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return /[.!?]$/.test(text) ? text : text + ".";
+}
+
+function appendSourceLinks(parent, ids) {
+  let added = 0;
+  (ids || []).forEach(function (id) {
+    const source = sourceById(id);
+    if (!source) return;
+    const url = String(source.url || "");
+    if (url.indexOf("https://") !== 0 && url.indexOf("http://") !== 0) return;
+    if (added) parent.append(document.createTextNode(", "));
+    const link = document.createElement("a");
+    link.href = url;
+    link.rel = "noopener noreferrer";
+    link.target = "_blank";
+    link.textContent = source.title || id;
+    parent.append(link);
+    added += 1;
+  });
+  return added;
+}
+
+function causeSummary(report) {
+  const causeName = knownValue(CAUSE_LABEL[report.cause] || report.cause);
+  const replacement = knownValue(report.replacement_land_use);
+  const names = [knownValue(report.plantation_name), knownValue(report.company)].filter(Boolean);
+  const parts = [];
+  if (causeName) parts.push(causeName);
+  if (replacement && replacement.toLowerCase() !== causeName.toLowerCase()) parts.push(replacement);
+  if (names.length) parts.push(names.join(", "));
+  let text = parts.length ? parts.join(". ") : "No cause was identified in public reporting";
+  text = asSentence(text);
+  if (report.confidence) text += " Confidence: " + report.confidence + ".";
+  const period = knownValue(report.event_period);
+  if (period) text += " Reported period: " + asSentence(period);
+  return text;
+}
+
+function appendInvestigation() {
+  const investigation = state.investigation;
+  if (!investigation || !(Number(investigation.tool_calls) > 0) || investigation.status === "not_applicable") return;
+  const block = document.createElement("details");
+  block.className = "cause-block";
+  const heading = document.createElement("summary");
+  heading.textContent = "Likely cause (public reporting)";
+  block.append(heading);
+  if (investigation.status === "error" || !investigation.report) {
+    const line = document.createElement("p");
+    line.className = "disclaimer";
+    line.textContent = "Source lookup unavailable.";
+    block.append(line);
+    findingEl.append(block);
+    return;
+  }
+  const report = investigation.report;
+  const summary = document.createElement("p");
+  summary.textContent = causeSummary(report);
+  block.append(summary);
+  const evidence = Array.isArray(report.evidence) ? report.evidence : [];
+  if (evidence.length) {
+    const list = document.createElement("ul");
+    list.className = "cause-list";
+    evidence.forEach(function (item) {
+      const entry = document.createElement("li");
+      entry.textContent = asSentence(item && item.claim);
+      const cite = document.createElement("span");
+      cite.className = "cause-cite";
+      cite.append(document.createTextNode("Source: "));
+      if (appendSourceLinks(cite, item && item.source_ids)) entry.append(cite);
+      list.append(entry);
+    });
+    block.append(list);
+  }
+  const inferences = (Array.isArray(report.inferences) ? report.inferences : []).map(function (item) {
+    return asSentence(item && (item.claim || item.basis));
+  }).filter(Boolean);
+  const caveats = (Array.isArray(report.caveats) ? report.caveats : []).map(asSentence).filter(Boolean);
+  if (inferences.length || caveats.length) {
+    const inferHeading = document.createElement("h2");
+    inferHeading.textContent = "Inferences";
+    const list = document.createElement("ul");
+    list.className = "cause-list";
+    inferences.concat(caveats).forEach(function (text) {
+      const entry = document.createElement("li");
+      entry.textContent = text;
+      list.append(entry);
+    });
+    block.append(inferHeading, list);
+  }
+  const note = document.createElement("p");
+  note.className = "disclaimer";
+  note.textContent = "From public web reporting, not a compliance finding.";
+  block.append(note);
+  findingEl.append(block);
+}
+
+function scoredMean(confidence) {
+  const windows = (confidence && confidence.windows) || [];
+  const scored = [];
+  for (let i = 0; i < windows.length; i += 1) {
+    const window = windows[i];
+    if (!window || typeof window.score !== "number") continue;
+    if (!(Number(window.seconds) > 0 || String(window.raw || "").trim())) continue;
+    scored.push(window);
+  }
+  if (!scored.length) return null;
+  let weight = 0;
+  let sum = 0;
+  scored.forEach(function (window) {
+    const share = typeof window.loss_share === "number" ? window.loss_share : 0;
+    weight += share;
+    sum += share * window.score;
+  });
+  const mean = weight > 0
+    ? sum / weight
+    : scored.reduce(function (total, window) { return total + window.score; }, 0) / scored.length;
+  return Math.round(mean * 1000) / 1000;
+}
+
+function scoreNeedsSearch(confidence) {
+  if (!confidence || confidence.maps_only || !confidence.model) return false;
+  const mean = scoredMean(confidence);
+  if (typeof mean === "number" && mean >= 0.5) return true;
+  const windows = confidence.windows || [];
+  for (let i = 0; i < windows.length; i += 1) {
+    const window = windows[i];
+    if (window && window.eligible && typeof window.score === "number" && window.score >= 0.6) return true;
+  }
+  return false;
+}
+
+function requestInvestigation(plotUrl) {
+  const id = String(plotUrl || "").split("/").filter(Boolean).pop();
+  if (!id || state.investigationPending === id) return;
+  state.investigationPending = id;
+  if (statusEl) {
+    statusEl.hidden = false;
+    statusEl.textContent = "Looking up public reporting for this plot.";
+  }
+  fetch("/api/investigate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plot: id })
+  }).then(function (response) {
+    return response.json().then(function (payload) {
+      if (!response.ok) throw new Error(payload.error || "Source lookup failed");
+      return payload;
+    });
+  }).then(function (payload) {
+    if (state.plotUrl !== plotUrl) return;
+    state.investigation = payload;
+    state.investigationPending = null;
+    renderPanel();
+  }).catch(function () {
+    if (state.plotUrl !== plotUrl) return;
+    state.investigationPending = null;
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = "Source lookup unavailable.";
+    }
+  });
+}
+
 function renderFinding() {
   findingEl.replaceChildren();
   if (state.confidence && typeof state.confidence.mean_score === "number") {
@@ -333,6 +530,7 @@ function renderFinding() {
     }
     if (disclaimer.textContent) findingEl.append(verdict, disclaimer, loss);
     else findingEl.append(verdict, loss);
+    appendInvestigation();
     return;
   }
   if (!state.analysisLoaded) return;
@@ -347,6 +545,7 @@ function renderFinding() {
     loss.className = "loss-note";
     loss.textContent = "About 20% of this box was lost in 2023. The loss map ends in 2024.";
     findingEl.append(verdict, disclaimer, loss);
+    appendInvestigation();
     return;
   }
   const verdict = document.createElement("p");
@@ -364,6 +563,7 @@ function renderFinding() {
     list.append(item);
   });
   findingEl.append(verdict, list);
+  appendInvestigation();
 }
 
 function renderSelection() {
@@ -750,8 +950,9 @@ function showSubmission(animate) {
     padding.top = 16;
     padding.bottom = 16;
   }
+  const frame = state.clipToDraft && state.draftBbox ? state.draftBbox : state.bbox;
   map.fitBounds(
-    [[state.bbox[0], state.bbox[1]], [state.bbox[2], state.bbox[3]]],
+    [[frame[0], frame[1]], [frame[2], frame[3]]],
     { padding: padding, maxZoom: 13, duration: animate ? 900 : 0 }
   );
 }
@@ -1215,10 +1416,13 @@ function openPlot(id) {
   analyzeNote.textContent = "Opening this checked plot.";
   state.plotRequest += 1;
   state.plotUrl = "../data/plots/" + id;
+  state.clipToDraft = false;
   state.draftBbox = null;
   state.draftFeature = null;
   state.draftGeometry = null;
   state.confidence = null;
+  state.investigation = null;
+  state.investigationPending = null;
   state.scenes = [];
   state.chips = [];
   hidePlotLayers();
@@ -1391,13 +1595,20 @@ document.getElementById("analyze").addEventListener("click", function () {
   }).then(function (payload) {
     if (payload.cached) setProcessing(true, "Loading cache");
     else setProcessing(true, "Finishing");
+    state.clipToDraft = !!payload.cached && !!state.draftGeometry;
     state.plotUrl = "../data/plots/" + payload.plot;
     return loadPlot().then(function () {
       return payload;
     });
   }).then(function (payload) {
+    const saved = state.bbox;
+    const drawn = state.draftBbox;
+    const cropped = payload.cached && state.clipToDraft && saved && drawn
+      && (saved[0] < drawn[0] - 1e-5 || saved[1] < drawn[1] - 1e-5 || saved[2] > drawn[2] + 1e-5 || saved[3] > drawn[3] + 1e-5);
     analyzeNote.textContent = payload.cached
-      ? "This area was already checked. Showing that result."
+      ? (cropped
+        ? "This area was already checked. Showing the part inside the shape you drew."
+        : "This area was already checked. Showing that result.")
       : "Check finished.";
     showSubmission(true);
   }).catch(function (error) {
@@ -1510,13 +1721,15 @@ function loadPlot() {
     fetchJson(plot + "/chip_stats.json"),
     fetchJson(plot + "/perception_tiles.json"),
     fetchJson(plot + "/confidence.json"),
+    fetchJson(plot + "/investigation.json"),
     fetchJson(plot + "/submission.json")
   ]).then(function (results) {
     const evidence = results[0];
     const stats = results[1];
     const perception = results[2];
     const confidence = results[3];
-    const submission = results[4];
+    const investigation = results[4];
+    const submission = results[5];
     if (request !== state.plotRequest) return;
     if (!evidence.ok || !evidence.data || !Array.isArray(evidence.data.bbox) || evidence.data.bbox.length !== 4) {
       throw new Error("This checked plot has no map bounds.");
@@ -1526,11 +1739,16 @@ function loadPlot() {
       const year = Number(String(scene.date).slice(0, 4));
       return !(plot.endsWith("kalbar1") && (year === 2022 || year === 2024));
     });
-    const geometry = evidence.data.geometry
-      || (submission.ok && submission.data && submission.data.geometry)
-      || null;
-    setPropertyBoundary(geometry);
+    if (!(state.clipToDraft && state.draftGeometry)) {
+      const geometry = evidence.data.geometry
+        || (submission.ok && submission.data && submission.data.geometry)
+        || null;
+      setPropertyBoundary(geometry);
+    } else {
+      setPropertyBoundary(state.draftGeometry);
+    }
     state.confidence = confidence && confidence.ok ? confidence.data : null;
+    state.investigation = investigation && investigation.ok ? investigation.data : null;
     formatPlace(evidence.ok ? evidence.data : null, submission.ok ? submission.data : null);
     state.analysisLoaded = stats.ok && perception.ok;
     state.chips = buildChips(stats.ok ? stats.data : null, perception.ok ? perception.data : null);
@@ -1546,6 +1764,7 @@ function loadPlot() {
       timeInput.value = String(state.scenes.length - 1);
     }
     renderPanel();
+    if (scoreNeedsSearch(state.confidence) && !state.investigation) requestInvestigation(plot);
   });
 }
 
@@ -1579,9 +1798,10 @@ function renderFarmList(list, company) {
     const li = document.createElement("li");
     const button = document.createElement("button");
     button.type = "button";
+    button.dataset.farmId = company.id + ":" + farm.id;
     button.textContent = farmLabel(farm);
     if (!farm.resolved) button.classList.add("unresolved");
-    if (state.selectedFarmId === company.id + ":" + farm.id) button.classList.add("active");
+    if (state.selectedFarmId === button.dataset.farmId) button.classList.add("active");
     button.addEventListener("click", function () { selectCompanyFarm(company, farm); });
     li.append(button);
     list.append(li);
@@ -1697,7 +1917,11 @@ function renameCompany(company, name) {
 
 function selectCompanyFarm(company, farm) {
   state.selectedFarmId = company.id + ":" + farm.id;
-  renderCompanies();
+  if (companyList) {
+    companyList.querySelectorAll(".farm-list button").forEach(function (button) {
+      button.classList.toggle("active", button.dataset.farmId === state.selectedFarmId);
+    });
+  }
   if (!farm.resolved || !farm.geometry || !farm.bbox) {
     if (intakeNote) {
       intakeNote.textContent = (farm.name || "That mill") + (farm.uml_id ? " (" + farm.uml_id + ")" : "") + " has no coordinates in the mill list.";

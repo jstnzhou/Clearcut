@@ -7,3 +7,7 @@ pillow
 shapely
 pypdf
 openpyxl
+perceptron>=0.4.0
+requests
+jsonschema
+pytest
