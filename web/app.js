@@ -1588,7 +1588,13 @@ document.getElementById("analyze").addEventListener("click", function () {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   }).then(function (response) {
-    return response.json().then(function (body) {
+    return response.text().then(function (text) {
+      let body;
+      try {
+        body = JSON.parse(text);
+      } catch (error) {
+        throw new Error("This public page cannot run a new check. The analysis server is the local demo.");
+      }
       if (!response.ok) throw new Error(body.error || "Analysis failed");
       return body;
     });
